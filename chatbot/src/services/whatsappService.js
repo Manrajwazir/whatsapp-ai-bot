@@ -1,25 +1,57 @@
-const { makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { makeWASocket, useMultiFileAuthState, delay } = require("@whiskeysockets/baileys");
+const logger = require('../config/logger');
+const chatController = require('../controllers/chatController');
 
-async function connectWhatsApp(onMessage, girlfriendNumber) {
-  const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
-  const sock = makeWASocket({ auth: state });
-
-  sock.ev.on("messages.upsert", async (m) => {
-    const message = m.messages?.[0];
-    if (!message?.message?.conversation) return;
-
-    const from = message.key.remoteJid;
-    const text = message.message.conversation;
-
-    if (from === girlfriendNumber) {
-      const reply = await onMessage(text);
-      await sock.sendMessage(from, { text: reply }); 
+class WhatsappService {
+    constructor(){
+      this.messageQueue = [];
+      this.isProcessing = false;
+      this.sock = null;
     }
-  });
 
-  sock.ev.on("creds.update", saveCreds);
+    async initialize() {
+    try {
+      const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
-  return sock; // return the socket here
+      this.sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: true,
+        logger: logger
+      });
+
+      this.setupEventHandlers(saveCreds);
+      logger.info('Whatsapp service initialized');
+
+    }catch ( error ){
+      logger.error('WhatsApp initialization failed:', error);
+      throw error;
+    }
+  }
+
+  setupEventHandlers(saveCreds) {
+    this.sock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect } = update;
+      if ( connection === 'close') {
+        this.handleDisconnect(lastDisconnect);
+      }
+    });
+
+    this.sock.ev.on('creds.update', saveCreds);
+
+    this.sock.ev.on('messages.upsert', async (m) => {
+      try {
+        const messgae = m.messages[0];
+        if (!this.shouldProcessMessage(message)) return;
+
+        const text = this.extractMessageText(message);
+        if(!text) return;
+
+        this.addToQueue(message.key.remoteJid, text);
+      } catch (error){
+        logger.error('Message processing error:', error);
+      }
+    });
+  }
+
 }
 
-module.exports = connectWhatsApp;
