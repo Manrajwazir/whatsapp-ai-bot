@@ -40,7 +40,7 @@ class WhatsappService {
 
     this.sock.ev.on('messages.upsert', async (m) => {
       try {
-        const messgae = m.messages[0];
+        const message = m.messages[0];
         if (!this.shouldProcessMessage(message)) return;
 
         const text = this.extractMessageText(message);
@@ -52,6 +52,81 @@ class WhatsappService {
       }
     });
   }
+  shouldProcessMessage(message) {
+    // dont't process if no message or if it's from yourself
+    return message?.message &&
+          !message.key.fromMe &&
+          message.key.remoteJid === process.env.GIRLFRIEND_NUMBER;
+  }
 
+  extractMessageText(message){
+    return message.message.conversation ||
+           message.message.extendedTextMessage?.text ||
+           '';
+  }
+
+  addToQueue(remoteJid, text){
+    this.messageQueue.push({
+      remoteJid,
+      text,
+      timestamp: Date.now()
+    });
+
+    if (!this.isProcessing) {
+      this.processQueue();
+    }
+  }
+
+  async processQueue(){
+    this.isProcessing = true;
+
+    try {
+      await delay(10000);
+
+      if (this.messageQueue.length === 0){
+        this.isProcessing = false;
+        return;
+      }
+      const now = Date.now();
+      const recentMessages = this.messageQueue.filter(m => now - m.timestamp < 10000);
+      this.messageQueue = this.messageQueue.filter(m => now - m.timestamp >= 10000);
+
+      if (recentMessages.length > 0) {
+        await this.handleMessages(recentMessages);
+      }
+    } catch (error){
+      logger.error('Queue processing error:', error);
+    } finally {
+      this.isProcessing = false;
+
+      if (this.messageQueue.length > 0){
+        this.processQueue();
+      }
+    }
+  }
+
+  async handleMessages(messages){
+    const remoteJid = messages[0].remoteJid;
+    const combinedText = messages.map(m => m.text).join('\n');
+
+    // human like delay (1 - 5 seconds)
+    await delay(1000 * Math.random()* 4000);
+
+    const reply = await chatController.generateReply(combinedText);
+
+    if (reply){
+      await this.sock.sendMessage(remoteJid, { text: reply });
+    }
+  }
+  handleDisconnect(lastDisconnect) {
+    const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== 401;
+    logger.warn(`connection closed. Reconnecting: ${shouldReconnect}`);
+
+    if (shouldReconnect){
+      setTimeout(() => this.initialize(), 5000);
+    }
+  }
 }
+
+module.exports = new WhatsappService();
 
