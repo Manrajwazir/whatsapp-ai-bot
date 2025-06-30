@@ -115,6 +115,34 @@ class OpenAIService {
 
     return casual;
   }
+
+  addRandomTypo(text) {
+    const words = text.split(' ');
+    if (words.length < 2) return text;
+    
+    const typoPos = Math.floor(Math.random() * words.length);
+    const word = words[typoPos];
+    
+    if (word.length <= 2) return text;
+
+    // Apply different typo types
+    const typoType = Math.floor(Math.random() * 3);
+    switch (typoType) {
+      case 0: 
+        const doublePos = Math.floor(Math.random() * (word.length - 1));
+        words[typoPos] = word.slice(0, doublePos + 1) + word.slice(doublePos);
+        break;
+      case 1:
+        const removePos = Math.floor(Math.random() * word.length);
+        words[typoPos] = word.slice(0, removePos) + word.slice(removePos + 1);
+        break;
+      case 2:
+        words[typoPos] = word.replace(/[aeiou]/g, () =>
+          'aeiou'[Math.floor(Math.random() * 5)]);
+        break;
+    }
+  return words.join(' ');
+  }
 }
 
 module.exports = new OpenAIService();
