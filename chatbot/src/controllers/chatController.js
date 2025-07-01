@@ -41,3 +41,5 @@ class ChatController {
         return this.conversationHistory;
     }
 }
+
+module.exports = new ChatController();
