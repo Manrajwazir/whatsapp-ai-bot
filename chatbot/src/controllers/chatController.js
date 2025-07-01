@@ -2,44 +2,44 @@ const logger = require('../config/logger');
 const openaiService = require('../services/openaiService');
 
 class ChatController {
-    constructor() {
-        this.conversationHistory = [];
-        this.maxHistoryLength = 30;
+  constructor() {
+    this.conversationHistory = [];
+    this.maxHistoryLength = 30;
+  }
+
+  async generateReply(userMessage) {
+    try {
+      this.addToHistory('user', userMessage);
+      
+      const reply = await openaiService.generateReply(this.conversationHistory);
+      
+      this.addToHistory('assistant', reply);
+      this.manageHistoryLength();
+      
+      return reply;
+    } catch (error) {
+      logger.error('Reply generation error:', error);
+      return null;
     }
+  }
 
-    async generateReply(userMessage) {
-        try {
-            this.addToHistory('user', userMessage);
+  addToHistory(role, content) {
+    this.conversationHistory.push({
+      role,
+      content,
+      timestamp: Date.now()
+    });
+  }
 
-            const reply = await openaiService.generateReply(this.conversationHistory);
-
-            this.addToHistory('assistant', reply);
-            this.manageHistoryLength();
-
-            return reply;
-        } catch (error) {
-            logger.error('reply generation error: ', error);
-            return null;
-        }
+  manageHistoryLength() {
+    if (this.conversationHistory.length > this.maxHistoryLength) {
+      this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
     }
-    
-    addToHistory(role, content) {
-        this.conversationHistory.push({
-            role,
-            content,
-            timestamp: Date.now()
-        });
-    }
+  }
 
-    manageHistoryLength() {
-        if (this.conversationHistory.length > this.maxHistoryLength) {
-            this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
-        }
-    }
-
-    getConversationHistory() {
-        return this.conversationHistory;
-    }
+  getConversationHistory() {
+    return this.conversationHistory;
+  }
 }
 
 module.exports = new ChatController();
