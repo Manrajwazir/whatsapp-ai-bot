@@ -30,4 +30,14 @@ class ChatController {
             timestamp: Date.now()
         });
     }
+
+    manageHistoryLength() {
+        if (this.conversationHistory.length > this.maxHistoryLength) {
+            this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
+        }
+    }
+
+    getConversationHistory() {
+        return this.conversationHistory;
+    }
 }
