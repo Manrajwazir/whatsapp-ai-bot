@@ -22,4 +22,12 @@ class ChatController {
             return null;
         }
     }
+    
+    addToHistory(role, content) {
+        this.conversationHistory.push({
+            role,
+            content,
+            timestamp: Date.now()
+        });
+    }
 }
