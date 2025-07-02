@@ -2,7 +2,6 @@ const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
 
-// Create logs directory if it doesn't exist
 const logDir = 'logs';
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
@@ -38,5 +37,9 @@ if (process.env.NODE_ENV === 'development') {
     )
   }));
 }
+
+logger.trace = (...args) => {
+  logger.debug('[TRACE]', ...args);
+};
 
 module.exports = logger;

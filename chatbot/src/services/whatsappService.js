@@ -1,6 +1,7 @@
 const { makeWASocket, useMultiFileAuthState, delay } = require('@whiskeysockets/baileys');
 const logger = require('../config/logger');
 const chatController = require('../controllers/chatController');
+const qrcode = require('qrcode-terminal');
 
 class WhatsAppService {
   constructor() {
@@ -15,7 +16,6 @@ class WhatsAppService {
       
       this.sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
         logger: logger
       });
 
@@ -29,7 +29,13 @@ class WhatsAppService {
 
   setupEventHandlers(saveCreds) {
     this.sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr  } = update;
+
+      if (qr) {
+        qrcode.generate(qr, { small: true });
+        logger.info('Scan the QR code above to log in.');
+      }
+
       if (connection === 'close') {
         this.handleDisconnect(lastDisconnect);
       }
@@ -114,6 +120,8 @@ class WhatsAppService {
     await delay(1000 + Math.random() * 4000);
     
     const reply = await chatController.generateReply(combinedText);
+    chatController.addToHistory('user', combinedText);
+    chatController.addToHistory('assistant', reply);  
     
     if (reply) {
       await this.sock.sendMessage(remoteJid, { text: reply });
