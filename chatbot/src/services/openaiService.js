@@ -20,7 +20,7 @@ class OpenAIService {
         "Occasional typos",
         "Brief and casual",
         "Never uses periods or commas",
-        "Replies in hinglish for casualty"
+        "Uses hinglish words in sentences sometimes"
       ],
       examples: [
         {
@@ -44,10 +44,13 @@ class OpenAIService {
 
       const response = await this.openai.chat.completions.create({
         model: "gpt-3.5-turbo",
-        messages,
-        temperature: 0.85,
+        messages: [
+          { role: "system", content: "Respond briefly and concisely. Keep answers in the range between 40 - 130 words depending on the conversation."},
+          ...messages
+        ],
+        temperature: 0.9,
         max_tokens: 150,
-        frequency_penalty: 0.7,
+        frequency_penalty: 0.6,
         presence_penalty: 0.4
       });
 
@@ -89,10 +92,7 @@ class OpenAIService {
       const replacements = {
       ' you ': ' u ',
       ' your ': ' ur ',
-      ' are ': ' r ',
       ' to ': ' 2 ',
-      ' too ': ' 2 ',
-      ' for ': ' 4 ',
       ' what ': ' wat ',
       ' with ': ' wit ',
       ' because ': ' cuz ',
