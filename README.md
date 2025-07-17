@@ -31,7 +31,7 @@ Welcome to **Version 1** of my custom-built **WhatsApp AI Chatbot** — a local 
 |------------------|------------------------|
 | Messaging Client | [Baileys](https://github.com/WhiskeySockets/Baileys) |
 | Backend          | Node.js + Express      |
-| AI Brain         | OpenAI GPT-4 (API)     |
+| AI Brain         | OpenAI GPT-3-5 Turbo (API)     |
 | Logging          | Winston                |
 | Dashboard        | Basic HTML + Tailwind  |
 
