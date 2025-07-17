@@ -67,19 +67,23 @@ Link a new device using the QR code shown in your terminal
 ### 🧩 Project Structure
 ```bash
 chatbot/
-├── src/
-│   ├── server.js         # Express server
-│   ├── whatsapp.js       # Baileys logic
-│   ├── openai.js         # AI message generation
-│   ├── dashboard.js      # Frontend for chat monitoring
-│   └── utils/
-│       └── logger.js     # Winston config
-├── logs/
-│   ├── chat.log
-│   └── error.log
-├── public/               # Dashboard UI
 ├── .env
-└── package.json
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── logs/
+│   ├── combined.log
+│   └── error.log
+├── public/                 # Dashboard UI
+├── src/
+│   ├── index.js            # Entry point for the app
+│   ├── config/
+│   │   └── logger.js       # Winston configuration
+│   ├── controllers/
+│   │   └── chatController.js
+│   ├── services/
+│   │   ├── openaiService.js
+│   │   └── whatsappService.js
 ```
 💬 Example Response Logic
 ```bash
