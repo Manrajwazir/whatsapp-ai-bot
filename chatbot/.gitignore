@@ -4,4 +4,6 @@ auth_info/
 logs/
 *.log
 last-qr-link.txt
-/src/generated/prisma
+dev.db
+dev.db-journal
+.DS_Store
