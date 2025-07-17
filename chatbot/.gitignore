@@ -4,3 +4,4 @@ auth_info/
 logs/
 *.log
 last-qr-link.txt
+/src/generated/prisma
