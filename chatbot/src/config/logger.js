@@ -1,10 +1,10 @@
-const winston = require('winston');
-const path = require('path');
-const fs = require('fs');
+const winston = require('winston')
+const path = require('path')
+const fs = require('fs')
 
-const logDir = 'logs';
+const logDir = 'logs'
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir)
 }
 
 const logger = winston.createLogger({
@@ -26,7 +26,7 @@ const logger = winston.createLogger({
       filename: path.join(logDir, 'combined.log')
     })
   ]
-});
+})
 
 // Console logging in development
 if (process.env.NODE_ENV === 'development') {
@@ -35,11 +35,11 @@ if (process.env.NODE_ENV === 'development') {
       winston.format.colorize(),
       winston.format.simple()
     )
-  }));
+  }))
 }
 
 logger.trace = (...args) => {
-  logger.debug('[TRACE]', ...args);
-};
+  logger.debug('[TRACE]', ...args)
+}
 
-module.exports = logger;
+module.exports = logger
