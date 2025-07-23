@@ -6,3 +6,15 @@ const prisma = new PrismaClient({
       ? ["query", "info", "warn", "error"]
       : ["error"],
 });
+
+process.on("SIGINT", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+module.exports = prisma;
