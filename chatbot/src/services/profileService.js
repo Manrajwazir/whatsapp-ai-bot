@@ -43,4 +43,21 @@ class ProfileService {
       throw error;
     }
   }
+
+  async updateProfile(updates) {
+    try {
+      const profile = await this.getProfile();
+      if (!profile) throw new Error("No profile found");
+
+      return await prisma.profile.update({
+        where: { id: profile.id },
+        data: updates,
+      });
+    } catch (error) {
+      logger.error("Failed to update profile: ", error);
+      throw error;
+    }
+  }
 }
+
+module.exports = new ProfileService();
