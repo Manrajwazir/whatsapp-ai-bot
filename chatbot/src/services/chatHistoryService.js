@@ -38,4 +38,31 @@ class ChatHistoryService {
       logger.error("Failed to save chat history:", error);
     }
   }
+
+  async getRecentHistory(profileId, limit = 20) {
+    try {
+      return await prisma.chatHistory.findMany({
+        where: { profileId },
+        orderBy: { timestamp: "desc" },
+        take: limit,
+      });
+    } catch (error) {
+      logger.error("Failed to fetch chat history:", error);
+      return [];
+    }
+  }
+
+  async getFullHistory(profileId) {
+    try {
+      return await prisma.chatHistory.findMany({
+        where: { profileId },
+        orderBy: { timestamp: "asc" },
+      });
+    } catch (error) {
+      logger.error("Failed to fetch full chat history:", error);
+      return [];
+    }
+  }
 }
+
+module.exports = new ChatHistoryService();
