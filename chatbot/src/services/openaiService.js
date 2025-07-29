@@ -6,24 +6,31 @@ class OpenAIService {
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      timeout: 15000, // 15 second timeout
+      timeout: 15000,
     });
   }
 
-  async generateReply(conversation) {
+  /**
+   * Generate AI reply using profile and personality context
+   */
+  async generateReply(profile) {
     try {
-      const messages = this.buildMessageList(conversation);
+      // Get full config (personality + conversationHistory)
+      const config = await personalityService.getConfig(profile);
 
+      // Build messages with system prompt + conversation history
+      const messages = [
+        {
+          role: "system",
+          content: this.buildSystemPrompt(config),
+        },
+        ...config.conversationHistory,
+      ];
+
+      // Call OpenAI API
       const response = await this.openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Respond briefly and concisely. Keep answers in the range between 40 - 130 words depending on the conversation.",
-          },
-          ...messages,
-        ],
+        model: "gpt-4-turbo-preview",
+        messages,
         temperature: 0.9,
         max_tokens: 150,
         frequency_penalty: 0.6,
@@ -31,44 +38,61 @@ class OpenAIService {
       });
 
       const rawReply =
-        response.choices[0]?.message?.content || "hmm not sure wat to say";
-      return this.casualizeText(rawReply);
+        response.choices[0]?.message?.content || "uhh i got nothin rn";
+
+      // Return casualized reply (adds nicknames & typos)
+      return this.casualizeText(rawReply, config.nicknames);
     } catch (error) {
-      logger.error("OpenAI API error: ", error);
-      return "my brains cannot understand this tell me sumthin else";
+      logger.error("OpenAI API error:", error);
+      return "uhhh my brain stuck rn try again";
     }
   }
 
-  buildMessageList(conversation) {
-    const systemPrompt = {
-      role: "system",
-      content: `you are ${
-        this.personality.name
-      } texting your girlfriend who lives in india and you live in edmonton. Follow these rules:
-      1. Never use punctuation (. , ! ?)
-      2. Use lowercase unless it's a name
-      3. Make occasional typos (u instead of you, wat instead of what)
-      4. Keep responses brief (1-2 lines max)
-      5. Never reveal you're an AI
-      
-      Personality traits: ${this.personality.traits.join(", ")}`,
-    };
+  /**
+   * Build system prompt using all profile data
+   */
+  buildSystemPrompt(config) {
+    return `You are simulating ${config.userName}, the ${
+      config.role
+    } in a relationship. 
+You are texting their partner and must reply exactly like them using their personality and style.
 
-    const exampleMessages = this.personality.examples.flatMap((ex) => [
-      { role: "user", content: ex.input },
-      { role: "assistant", content: ex.output },
-    ]);
+RULES:
+1. Never say you're an AI
+2. Write casually: lowercase, avoid proper punctuation
+3. Insert occasional typos: e.g., 'u' for 'you', 'wat' for 'what'
+4. Use their nicknames for their partner naturally in replies
+5. Responses must be short and natural (1–2 lines max)
 
-    return [systemPrompt, ...exampleMessages, ...conversation];
+Personality:
+- Gender: ${config.userGender || "unspecified"}
+- Style: ${config.style}
+- Tone: ${config.tone}
+- Nicknames: ${config.nicknames.join(", ")}
+
+Sample phrases (use as inspiration):
+${config.sampleMsgs.join("\n")}
+
+${
+  config.memories && Object.keys(config.memories).length > 0
+    ? `Memories:\n${Object.entries(config.memories)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join("\n")}`
+    : ""
+}`;
   }
 
-  casualizeText(text) {
+  /**
+   * Casualize GPT's response
+   */
+  casualizeText(text, nicknames = []) {
     let casual = text
       .toLowerCase()
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, "")
+      .replace(/[.,/#!$%^&*;:{}=\\-_`~()?'"]/g, "")
       .replace(/\s{2,}/g, " ")
       .trim();
 
+    // Replace formal words with casual ones
     const replacements = {
       " you ": " u ",
       " your ": " ur ",
@@ -83,12 +107,19 @@ class OpenAIService {
       " though ": " tho ",
     };
 
-    Object.entries(replacements).forEach(([proper, casualVersion]) => {
+    for (const [key, val] of Object.entries(replacements)) {
       if (Math.random() < 0.7) {
-        casual = casual.replace(new RegExp(proper, "g"), casualVersion);
+        casual = casual.replace(new RegExp(key, "g"), val);
       }
-    });
+    }
 
+    // Randomly add nicknames in the reply
+    if (nicknames.length > 0 && Math.random() < 0.4) {
+      const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
+      casual = casual + " " + nickname;
+    }
+
+    // Randomly add typos
     if (Math.random() < 0.3) {
       casual = this.addRandomTypo(casual);
     }
@@ -96,35 +127,39 @@ class OpenAIService {
     return casual;
   }
 
+  /**
+   * Random typo generator for human-like mistakes
+   */
   addRandomTypo(text) {
     const words = text.split(" ");
     if (words.length < 2) return text;
 
-    const typoPos = Math.floor(Math.random() * words.length);
-    const word = words[typoPos];
+    const index = Math.floor(Math.random() * words.length);
+    let word = words[index];
 
-    if (word.length <= 2) return text;
+    if (word.length < 3) return text;
 
-    // Apply different typo types
     const typoType = Math.floor(Math.random() * 3);
     switch (typoType) {
       case 0: {
-        const doublePos = Math.floor(Math.random() * (word.length - 1));
-        words[typoPos] = word.slice(0, doublePos + 1) + word.slice(doublePos);
+        const pos = Math.floor(Math.random() * (word.length - 1));
+        word = word.slice(0, pos) + word[pos] + word.slice(pos);
         break;
       }
       case 1: {
         const removePos = Math.floor(Math.random() * word.length);
-        words[typoPos] = word.slice(0, removePos) + word.slice(removePos + 1);
+        word = word.slice(0, removePos) + word.slice(removePos + 1);
         break;
       }
       case 2:
-        words[typoPos] = word.replace(
+        word = word.replace(
           /[aeiou]/g,
           () => "aeiou"[Math.floor(Math.random() * 5)]
         );
         break;
     }
+
+    words[index] = word;
     return words.join(" ");
   }
 }
