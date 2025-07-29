@@ -1,6 +1,7 @@
 const { OpenAI } = require("openai");
 const logger = require("../config/logger");
 const personalityService = require("./personalityService");
+const chatHistoryService = require("./chatHistoryService");
 
 class OpenAIService {
   constructor() {
@@ -11,23 +12,26 @@ class OpenAIService {
   }
 
   /**
-   * Generate AI reply using profile and personality context
+   * Generate AI reply using profile + history context
    */
-  async generateReply(profile) {
+  async generateReply(profile, userMessage = null) {
     try {
-      // Get full config (personality + conversationHistory)
+      // Get personality + conversation history
       const config = await personalityService.getConfig(profile);
 
-      // Build messages with system prompt + conversation history
+      // Build prompt messages
       const messages = [
-        {
-          role: "system",
-          content: this.buildSystemPrompt(config),
-        },
+        { role: "system", content: this.buildSystemPrompt(config) },
         ...config.conversationHistory,
       ];
 
-      // Call OpenAI API
+      // Save user message and add it to the context
+      if (userMessage) {
+        messages.push({ role: "user", content: userMessage });
+        await chatHistoryService.addMessage(profile.id, "user", userMessage);
+      }
+
+      // Send to OpenAI
       const response = await this.openai.chat.completions.create({
         model: "gpt-4-turbo-preview",
         messages,
@@ -40,7 +44,9 @@ class OpenAIService {
       const rawReply =
         response.choices[0]?.message?.content || "uhh i got nothin rn";
 
-      // Return casualized reply (adds nicknames & typos)
+      // Save bot reply in chat history
+      await chatHistoryService.addMessage(profile.id, "assistant", rawReply);
+
       return this.casualizeText(rawReply, config.nicknames);
     } catch (error) {
       logger.error("OpenAI API error:", error);
@@ -49,7 +55,7 @@ class OpenAIService {
   }
 
   /**
-   * Build system prompt using all profile data
+   * Build system prompt with all profile data
    */
   buildSystemPrompt(config) {
     return `You are simulating ${config.userName}, the ${
@@ -83,7 +89,7 @@ ${
   }
 
   /**
-   * Casualize GPT's response
+   * Make reply sound casual and human
    */
   casualizeText(text, nicknames = []) {
     let casual = text
@@ -92,7 +98,6 @@ ${
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    // Replace formal words with casual ones
     const replacements = {
       " you ": " u ",
       " your ": " ur ",
@@ -113,13 +118,13 @@ ${
       }
     }
 
-    // Randomly add nicknames in the reply
+    // Randomly add nicknames
     if (nicknames.length > 0 && Math.random() < 0.4) {
       const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
       casual = casual + " " + nickname;
     }
 
-    // Randomly add typos
+    // Random typo chance
     if (Math.random() < 0.3) {
       casual = this.addRandomTypo(casual);
     }
@@ -128,7 +133,7 @@ ${
   }
 
   /**
-   * Random typo generator for human-like mistakes
+   * Add human-like typos randomly
    */
   addRandomTypo(text) {
     const words = text.split(" ");
