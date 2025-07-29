@@ -15,7 +15,7 @@ const STEPS = {
 
 class OnboardingHandler {
   constructor() {
-    this.currenStep = STEPS.ROLE;
+    this.currentStep = STEPS.ROLE;
     this.data = {};
     this.isActive = false;
   }
@@ -35,7 +35,7 @@ class OnboardingHandler {
       if (result.error) return result;
 
       if (this.currentStep === STEPS.NICKNAMES) {
-        this.currenStep = STEPS.COMPLETE;
+        this.currentStep = STEPS.COMPLETE;
         this.isActive = false;
         return await this.completeSetup();
       }
