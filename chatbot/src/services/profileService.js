@@ -11,11 +11,16 @@ class ProfileService {
     }
   }
 
-  async getProfileByphone(phone) {
+  async getProfileByPhone(phone) {
     try {
       return await prisma.profile.findUnique({
         where: { partnerPhone: phone },
-        include: { chatHistory: { take: 20, orderBy: { timestamp: "desc" } } },
+        include: {
+          chatHistory: {
+            take: 20,
+            orderBy: { timestamp: "desc" },
+          },
+        },
       });
     } catch (error) {
       logger.error("Failed to fetch profile by phone: ", error);
@@ -25,7 +30,7 @@ class ProfileService {
 
   async isFirstRun() {
     try {
-      const count = prisma.profile.count();
+      const count = await prisma.profile.count();
       return count === 0;
     } catch (error) {
       logger.error("Failed to check first run:", error);
@@ -35,8 +40,19 @@ class ProfileService {
 
   async createProfile(profileData) {
     try {
+      const data = {
+        ...profileData,
+        sampleMsgs: Array.isArray(profileData.sampleMsgs)
+          ? profileData.sampleMsgs
+          : [],
+        nicknames: Array.isArray(profileData.nicknames)
+          ? profileData.nicknames
+          : [],
+        memories: profileData.memories || {},
+      };
+
       return await prisma.profile.create({
-        data: profileData,
+        data,
       });
     } catch (error) {
       logger.error("Failed to create profile: ", error);
@@ -49,9 +65,16 @@ class ProfileService {
       const profile = await this.getProfile();
       if (!profile) throw new Error("No profile found");
 
+      const data = {
+        ...updates,
+        sampleMsgs: updates.sampleMsgs || profile.sampleMsgs,
+        nicknames: updates.nicknames || profile.nicknames,
+        memories: updates.memories || profile.memories,
+      };
+
       return await prisma.profile.update({
         where: { id: profile.id },
-        data: updates,
+        data,
       });
     } catch (error) {
       logger.error("Failed to update profile: ", error);

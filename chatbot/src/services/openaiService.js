@@ -16,22 +16,18 @@ class OpenAIService {
    */
   async generateReply(profile, userMessage = null) {
     try {
-      // Get personality + conversation history
       const config = await personalityService.getConfig(profile);
 
-      // Build prompt messages
       const messages = [
         { role: "system", content: this.buildSystemPrompt(config) },
         ...config.conversationHistory,
       ];
 
-      // Save user message and add it to the context
       if (userMessage) {
         messages.push({ role: "user", content: userMessage });
         await chatHistoryService.addMessage(profile.id, "user", userMessage);
       }
 
-      // Send to OpenAI
       const response = await this.openai.chat.completions.create({
         model: "gpt-4-turbo-preview",
         messages,
@@ -44,7 +40,6 @@ class OpenAIService {
       const rawReply =
         response.choices[0]?.message?.content || "uhh i got nothin rn";
 
-      // Save bot reply in chat history
       await chatHistoryService.addMessage(profile.id, "assistant", rawReply);
 
       return this.casualizeText(rawReply, config.nicknames);
@@ -54,9 +49,6 @@ class OpenAIService {
     }
   }
 
-  /**
-   * Build system prompt with all profile data
-   */
   buildSystemPrompt(config) {
     return `You are simulating ${config.userName}, the ${
       config.role
@@ -88,9 +80,6 @@ ${
 }`;
   }
 
-  /**
-   * Make reply sound casual and human
-   */
   casualizeText(text, nicknames = []) {
     let casual = text
       .toLowerCase()
@@ -118,13 +107,11 @@ ${
       }
     }
 
-    // Randomly add nicknames
     if (nicknames.length > 0 && Math.random() < 0.4) {
       const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
       casual = casual + " " + nickname;
     }
 
-    // Random typo chance
     if (Math.random() < 0.3) {
       casual = this.addRandomTypo(casual);
     }
