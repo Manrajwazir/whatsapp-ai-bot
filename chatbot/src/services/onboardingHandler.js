@@ -97,4 +97,21 @@ class OnboardingHandler {
     this.data.role = role === "bf" ? "boyfriend" : "girlfriend";
     return { success: true };
   }
+
+  async handleUserDetails(input) {
+    const parts = input.split(",").map((s) => s.trim());
+    if (parts.length < 2) {
+      return {
+        error: "❌ Please provide both name and gender separated by comma",
+      };
+    } else if (parts.length > 2) {
+      return {
+        error:
+          "❌ Please dont provide anything more than your name and gender separated by comma",
+      };
+    }
+    this.data.userName = parts[0];
+    this.data.userGender = parts[1];
+    return { success: true };
+  }
 }
