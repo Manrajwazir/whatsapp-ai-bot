@@ -25,4 +25,18 @@ class ChatController {
       return "Oops, something went wrong. Try again!";
     }
   }
+
+  async getFullHistory(phone) {
+    try {
+      const profile = await profileService.getProfileByPhone(phone);
+      if (!profile) return [];
+
+      return await chatHistoryService.getFullHistory(profile.id);
+    } catch (error) {
+      logger.error("Failed to get chat history:", error);
+      return [];
+    }
+  }
 }
+
+module.exports = new ChatController();
