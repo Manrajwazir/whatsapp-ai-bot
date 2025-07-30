@@ -1,4 +1,3 @@
-const prisma = require("../db");
 const logger = require("../config/logger");
 const profileService = require("./profileService");
 
