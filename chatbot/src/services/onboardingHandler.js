@@ -186,3 +186,5 @@ class OnboardingHandler {
     }
   }
 }
+
+module.exports = new OnboardingHandler();
