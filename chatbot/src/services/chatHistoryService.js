@@ -1,41 +1,51 @@
-const prisma = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const logger = require("../config/logger");
 
 class ChatHistoryService {
   constructor() {
     this.historyLimit = parseInt(process.env.CHAT_HISTORY_LIMIT) || 100;
   }
-
   async addMessage(profileId, role, content) {
+    // Input validation
+    if (!profileId || !role || !content) {
+      throw new Error("Missing required parameters");
+    }
+
     try {
-      await prisma.chatHistory.create({
-        data: {
-          role,
-          content,
-          profileId,
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        // Add new message
+        await tx.chatHistory.create({
+          data: { role, content, profileId },
+        });
 
-      const count = await prisma.chatHistory.count({
-        where: { profileId },
-      });
-
-      if (count > this.historyLimit) {
-        const oldestMessages = await prisma.chatHistory.findMany({
+        // Clean up old messages if needed
+        const count = await tx.chatHistory.count({
           where: { profileId },
-          orderBy: { timestamp: "asc" },
-          take: count - this.historyLimit,
-          select: { id: true },
         });
 
-        await prisma.chatHistory.deleteMany({
-          where: {
-            id: { in: oldestMessages.map((m) => m.id) },
-          },
-        });
-      }
+        if (count > this.historyLimit) {
+          const excess = count - this.historyLimit;
+          await tx.chatHistory.deleteMany({
+            where: {
+              profileId,
+              id: {
+                in: await tx.chatHistory
+                  .findMany({
+                    where: { profileId },
+                    orderBy: { createdAt: "asc" },
+                    take: excess,
+                    select: { id: true },
+                  })
+                  .then((msgs) => msgs.map((m) => m.id)),
+              },
+            },
+          });
+        }
+      });
     } catch (error) {
       logger.error("Failed to save chat history:", error);
+      throw error; // Re-throw to allow caller to handle
     }
   }
 
@@ -43,7 +53,7 @@ class ChatHistoryService {
     try {
       return await prisma.chatHistory.findMany({
         where: { profileId },
-        orderBy: { timestamp: "desc" },
+        orderBy: { createdAt: "desc" },
         take: limit,
       });
     } catch (error) {

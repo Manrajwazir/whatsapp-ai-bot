@@ -34,7 +34,7 @@ class ProfileService {
       return count === 0;
     } catch (error) {
       logger.error("Failed to check first run:", error);
-      return true;
+      throw error;
     }
   }
 
@@ -63,13 +63,20 @@ class ProfileService {
   async updateProfile(updates) {
     try {
       const profile = await this.getProfile();
-      if (!profile) throw new Error("No profile found");
+      if (!profile) throw new Error("No profile found to update");
 
       const data = {
         ...updates,
-        sampleMsgs: updates.sampleMsgs || profile.sampleMsgs,
-        nicknames: updates.nicknames || profile.nicknames,
-        memories: updates.memories || profile.memories,
+        sampleMsgs:
+          updates.sampleMsgs !== undefined
+            ? updates.sampleMsgs
+            : profile.sampleMsgs,
+        nicknames:
+          updates.nicknames !== undefined
+            ? updates.nicknames
+            : profile.nicknames,
+        memories:
+          updates.memories !== undefined ? updates.memories : profile.memories,
       };
 
       return await prisma.profile.update({

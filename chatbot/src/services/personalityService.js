@@ -1,7 +1,7 @@
 const logger = require("../config/logger");
 const chatHistoryService = require("./chatHistoryService");
 
-class personalityService {
+class PersonalityService {
   constructor() {
     this.defaultStyles = {
       girlfriend: "flirty, affectionate, playful",
@@ -37,20 +37,22 @@ class personalityService {
   }
 
   async getConfig(profile) {
+    if (!profile || !profile.id || !profile.role) {
+      throw new Error("Invalid profile: missing required fields (id, role)");
+    }
+
     try {
       const chatHistory = await chatHistoryService.getRecentHistory(
         profile.id,
         10
       );
 
-      const formattedHistory = chatHistory.reverse().map((msg) => ({
+      const formattedHistory = [...chatHistory].reverse().map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
 
-      const role = profile.role.toLowerCase().includes("gf")
-        ? "girlfriend"
-        : "boyfriend";
+      const role = this.determineRole(profile);
 
       return {
         userName: profile.userName,
@@ -74,9 +76,10 @@ class personalityService {
   }
 
   getFallbackConfig(profile) {
-    const role = profile.role.toLowerCase().includes("gf")
-      ? "girlfriend"
-      : "boyfriend";
+    if (!profile || !profile.role) {
+      throw new Error("Invalid profile: missing required role field");
+    }
+    const role = this.determineRole(profile);
     return {
       userName: profile.userName,
       role,
@@ -89,4 +92,12 @@ class personalityService {
       conversationHistory: [],
     };
   }
+
+  determineRole(profile) {
+    return profile.role.toLowerCase().includes("gf")
+      ? "girlfriend"
+      : "boyfriend";
+  }
 }
+
+module.exports = new PersonalityService();

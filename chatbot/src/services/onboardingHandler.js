@@ -107,11 +107,19 @@ class OnboardingHandler {
     } else if (parts.length > 2) {
       return {
         error:
-          "❌ Please dont provide anything more than your name and gender separated by comma",
+          "❌ Please don't provide anything more than your name and gender separated by comma",
       };
     }
+
+    const validGenders = ["male", "female"];
+    if (!validGenders.includes(parts[1].toLowerCase())) {
+      return {
+        error: "❌ Please provide a valid gender (male/female)",
+      };
+    }
+
     this.data.userName = parts[0];
-    this.data.userGender = parts[1];
+    this.data.userGender = parts[1].toLowerCase();
     return { success: true };
   }
 

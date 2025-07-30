@@ -19,6 +19,8 @@ class WhatsAppService {
 
   async initialize() {
     try {
+      this.isFirstRun = await profileService.isFirstRun();
+
       const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
 
       this.sock = makeWASocket({
@@ -61,14 +63,8 @@ class WhatsAppService {
         const text = this.extractMessageText(message).trim();
         const phone = message.key.remoteJid;
 
-        if (await profileService.isFirstRun()) {
+        if (await this.isFirstRun()) {
           await this.handleOnBoarding(phone, text);
-          return;
-        }
-
-        if (text.startsWith("/update")) {
-          const updateResponse = await updateHandler.handleCommand(phone, text);
-          await this.sock.sendMessage(phone, { text: updateResponse });
           return;
         }
 
@@ -78,6 +74,11 @@ class WhatsAppService {
           return;
         }
 
+        if (text.startsWith("/update")) {
+          const updateResponse = await updateHandler.handleCommand(phone, text);
+          await this.sock.sendMessage(phone, { text: updateResponse });
+          return;
+        }
         this.addToQueue(phone, text);
       } catch (error) {
         logger.error("❌ Message processing error:", error);
@@ -99,8 +100,10 @@ class WhatsAppService {
     }
 
     const result = await onboardingHandler.handle(text);
+    const responseText =
+      result.message || result.error || "An unexpected error occurred";
     await this.sock.sendMessage(phone, {
-      text: result.message || result.error,
+      text: responseText,
     });
 
     if (result.completed) {
@@ -133,10 +136,10 @@ class WhatsAppService {
 
       const now = Date.now();
       const recentMessages = this.messageQueue.filter(
-        (m) => now - m.timestamp < 5000
+        (m) => now - m.timestamp < 7000
       );
       this.messageQueue = this.messageQueue.filter(
-        (m) => now - m.timestamp >= 5000
+        (m) => now - m.timestamp >= 7000
       );
 
       if (recentMessages.length > 0) {
@@ -155,9 +158,12 @@ class WhatsAppService {
 
   async handleMessages(messages) {
     const remoteJid = messages[0].remoteJid;
-    const combinedText = messages.map((m) => m.text).join("\n");
-
-    // Human-like delay (1-5 seconds)
+    // Ensure all messages are from the same sender
+    if (!messages.every((m) => m.remoteJid === remoteJid)) {
+      logger.error("Mixed remoteJid in message batch");
+      return;
+    }
+    const combinedText = messages.map((m) => m.text).join("\n"); // Human-like delay (1-5 seconds)
     await delay(1000 + Math.random() * 6000);
 
     const reply = await chatController.generateReply(combinedText, remoteJid);

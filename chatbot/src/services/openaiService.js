@@ -66,10 +66,12 @@ Personality:
 - Gender: ${config.userGender || "unspecified"}
 - Style: ${config.style}
 - Tone: ${config.tone}
-- Nicknames: ${config.nicknames.join(", ")}
+- Nicknames: ${
+      Array.isArray(config.nicknames) ? config.nicknames.join(", ") : "none"
+    }
 
 Sample phrases (use as inspiration):
-${config.sampleMsgs.join("\n")}
+${Array.isArray(config.sampleMsgs) ? config.sampleMsgs.join("\n") : ""}
 
 ${
   config.memories && Object.keys(config.memories).length > 0
@@ -79,7 +81,6 @@ ${
     : ""
 }`;
   }
-
   casualizeText(text, nicknames = []) {
     let casual = text
       .toLowerCase()
