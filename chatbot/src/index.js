@@ -1,47 +1,124 @@
-require('dotenv').config()
-const express = require('express')
-const path = require('path')
-const logger = require('./config/logger')
-const whatsappService = require('./services/whatsappService')
-const chatController = require('./controllers/chatController')
+require("dotenv").config();
+const express = require("express");
+const path = require("path");
+const logger = require("./config/logger");
+
+const whatsappService = require("./services/whatsappService");
+const chatController = require("./controllers/chatController");
+const profileController = require("./controllers/profileController");
+const profileService = require("./services/profileService"); // needed for reset
+const prisma = require("./db");
 
 class Application {
-  constructor () {
-    this.app = express()
-    this.port = process.env.PORT || 3000
+  constructor() {
+    this.app = express();
+    this.port = process.env.PORT || 3000;
   }
 
-  initialize () {
-    this.setupMiddleware()
-    this.setupRoutes()
-    this.startServices()
-    this.startServer()
+  async initialize() {
+    try {
+      await this.setupDatabase();
+      this.setupMiddleware();
+      this.setupRoutes();
+      this.startServices();
+      this.startServer();
+    } catch (error) {
+      logger.error("Application initialization failed:", error);
+      process.exit(1);
+    }
   }
 
-  setupMiddleware () {
-    this.app.use(express.json())
-    this.app.use(express.static(path.join(__dirname, '../public')))
+  async setupDatabase() {
+    try {
+      await prisma.$connect();
+      logger.info("✅ Database connected successfully");
+    } catch (error) {
+      logger.error("❌ Database connection failed:", error);
+      throw error;
+    }
   }
 
-  setupRoutes () {
-    this.app.get('/logs', (req, res) => {
-      res.json(chatController.getConversationHistory())
-    })
+  setupMiddleware() {
+    this.app.use(express.json());
+    this.app.use(express.static(path.join(__dirname, "../public")));
   }
 
-  startServices () {
-    whatsappService.initialize().catch(error => {
-      logger.error('Failed to initialize WhatsApp service:', error)
-    })
+  setupRoutes() {
+    this.app.get("/profile", async (req, res) => {
+      try {
+        const profile = await profileController.getProfile();
+        res.json(profile || {});
+      } catch (error) {
+        logger.error("Failed to fetch profile:", error);
+        res.status(500).json({ error: "Failed to fetch profile" });
+      }
+    });
+
+    // Chat history endpoint
+    this.app.get("/history", async (req, res) => {
+      try {
+        const profile = await profileController.getProfile();
+        if (!profile) return res.json([]);
+
+        const history = await chatController.getFullHistory(
+          profile.partnerPhone
+        );
+        res.json(history);
+      } catch (error) {
+        logger.error("Failed to fetch chat history:", error);
+        res.status(500).json({ error: "Failed to fetch history" });
+      }
+    });
+
+    // 🆕 Update memory endpoint
+    this.app.post("/update-memory", async (req, res) => {
+      const { key, value } = req.body;
+      if (!key || !value) {
+        return res
+          .status(400)
+          .json({ error: "Memory key and value are required" });
+      }
+
+      try {
+        const profile = await profileController.getProfile();
+        if (!profile)
+          return res.status(400).json({ error: "No profile found" });
+
+        const updatedMemories = { ...(profile.memories || {}) };
+        updatedMemories[key] = value;
+
+        await profileService.updateProfile({ memories: updatedMemories });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error("Failed to update memory:", error);
+        res.status(500).json({ error: "Failed to update memory" });
+      }
+    });
+
+    this.app.post("/reset", async (req, res) => {
+      try {
+        await prisma.profile.deleteMany({});
+        res.json({ success: true });
+      } catch (error) {
+        logger.error("Failed to reset profile:", error);
+        res.status(500).json({ error: "Failed to reset profile" });
+      }
+    });
   }
 
-  startServer () {
+  startServices() {
+    whatsappService.initialize().catch((error) => {
+      logger.error("Failed to initialize WhatsApp service:", error);
+    });
+  }
+
+  startServer() {
     this.app.listen(this.port, () => {
-      logger.info(`Server running on port ${this.port}`)
-      console.log(`✅ Dashboard: http://localhost:${this.port}`)
-    })
+      logger.info(`🚀 Server running on port ${this.port}`);
+      console.log(`✅ Dashboard: http://localhost:${this.port}`);
+    });
   }
 }
 
 // Start the application
-new Application().initialize()
+new Application().initialize();
