@@ -83,7 +83,7 @@ class OnboardingHandler {
       [STEPS.SAMPLE_MSGS]:
         "💬 Give 2 example messages *you* would send to your partner (separated by '|'):\nExample: hey baby|how was ur day",
       [STEPS.NICKNAMES]:
-        "💖 List the nicknames your partner calls you (comma-separated):",
+        "💖 List the nicknames you call your partner  (comma-separated):",
     };
     return messages[step];
   }

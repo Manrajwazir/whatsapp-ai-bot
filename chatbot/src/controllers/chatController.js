@@ -7,16 +7,13 @@ class ChatController {
   async generateReply(userMessage, phone) {
     try {
       const profile = await profileService.getProfileByPhone(phone);
-      if (!profile) return "Please complete setup first!";
+      if (!profile || !profile.id || !profile.role) {
+        logger.error("Invalid profile - missing required fields");
+        return "Please complete setup first!";
+      }
 
       await chatHistoryService.addMessage(profile.id, "user", userMessage);
-
-      const history = (await chatHistoryService.getRecentHistory(profile.id))
-        .sort((a, b) => a.createdAt - b.createdAt)
-        .map((msg) => ({ role: msg.role, content: msg.content }));
-
-      const reply = await openaiService.generateReply(history, profile);
-
+      const reply = await openaiService.generateReply(profile, userMessage);
       await chatHistoryService.addMessage(profile.id, "assistant", reply);
 
       return reply;

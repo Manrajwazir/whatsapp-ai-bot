@@ -37,8 +37,8 @@ class PersonalityService {
   }
 
   async getConfig(profile) {
-    if (!profile || !profile.id || !profile.role) {
-      throw new Error("Invalid profile: missing required fields (id, role)");
+    if (!profile?.id || !profile?.role) {
+      throw new Error(`Invalid profile: ${JSON.stringify(profile)}`);
     }
 
     try {
@@ -76,21 +76,20 @@ class PersonalityService {
   }
 
   getFallbackConfig(profile) {
-    if (!profile || !profile.role) {
-      throw new Error("Invalid profile: missing required role field");
+    if (!profile?.role) {
+      logger.error("No role found in profile, using default boyfriend config");
+      return {
+        userName: "User",
+        role: "boyfriend",
+        userGender: "male",
+        style: this.defaultStyles.boyfriend,
+        tone: this.defaultTones.boyfriend,
+        sampleMsgs: this.defaultSampleMsgs.boyfriend,
+        nicknames: this.defaultNicknames.boyfriend,
+        memories: {},
+        conversationHistory: [],
+      };
     }
-    const role = this.determineRole(profile);
-    return {
-      userName: profile.userName,
-      role,
-      userGender: profile.userGender,
-      style: this.defaultStyles[role],
-      tone: this.defaultTones[role],
-      sampleMsgs: this.defaultSampleMsgs[role],
-      nicknames: this.defaultNicknames[role],
-      memories: {},
-      conversationHistory: [],
-    };
   }
 
   determineRole(profile) {

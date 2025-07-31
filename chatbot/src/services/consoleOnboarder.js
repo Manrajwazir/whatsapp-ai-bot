@@ -4,32 +4,48 @@ const logger = require("../config/logger");
 
 class ConsoleOnboarder {
   constructor() {
-    this.rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
+    this.rl = null;
   }
 
-  async start() {
-    console.log("\n=== FIRST-TIME SETUP ===\n");
+  start() {
+    return new Promise((resolve) => {
+      console.log(`
+  ██████╗ ██████╗ ████████╗
+  ██╔══██╗██╔══██╗╚══██╔══╝
+  ██████╔╝██████╔╝   ██║   
+  ██╔═══╝ ██╔══██╗   ██║   
+  ██║     ██║  ██║   ██║   
+  ╚═╝     ╚═╝  ╚═╝   ╚═╝   
+  AI Relationship Bot v2.0
+      `);
 
-    // Start the onboarding handler
-    const initialMessage = await onboardingHandler.start();
-    console.log(initialMessage);
+      setTimeout(async () => {
+        console.log("\n=== FIRST-TIME SETUP ===\n");
 
-    this.rl.on("line", async (input) => {
-      const result = await onboardingHandler.handle(input.trim());
+        const initialMessage = await onboardingHandler.start();
+        console.log(initialMessage);
 
-      if (result.error) {
-        console.log(result.error);
-      } else if (result.message) {
-        console.log("\n" + result.message);
-      }
+        this.rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
 
-      if (result.completed) {
-        this.rl.close();
-        console.log("\n✅ Setup complete! Starting WhatsApp service...");
-      }
+        this.rl.on("line", async (input) => {
+          const result = await onboardingHandler.handle(input.trim());
+
+          if (result.error) {
+            console.log(result.error);
+          } else if (result.message) {
+            console.log("\n" + result.message);
+          }
+
+          if (result.completed) {
+            this.rl.close();
+            console.log("\n✅ Setup complete! Starting WhatsApp service...");
+            resolve(); // Let the main app know onboarding is done
+          }
+        });
+      }, 1000);
     });
   }
 }

@@ -6,7 +6,7 @@ const logger = require("./config/logger");
 const whatsappService = require("./services/whatsappService");
 const chatController = require("./controllers/chatController");
 const profileController = require("./controllers/profileController");
-const profileService = require("./services/profileService"); // needed for reset
+const profileService = require("./services/profileService");
 const prisma = require("./db");
 
 class Application {
@@ -23,22 +23,14 @@ class Application {
       if (await profileService.isFirstRun()) {
         logger.info("🆕 No profile found. Starting console onboarding...");
         const consoleOnboarder = require("./services/consoleOnboarder");
-        await consoleOnboarder.start();
-
-        // Wait for onboarding to complete before continuing
-        return new Promise((resolve) => {
-          this.setupMiddleware();
-          this.setupRoutes();
-          this.startServices();
-          this.startServer();
-          resolve();
-        });
+        await consoleOnboarder.start(); // Wait for onboarding to finish
       }
 
       this.setupMiddleware();
       this.setupRoutes();
       this.startServices();
       this.startServer();
+      this.setupTerminal(); // 🧠 Start reading /update input after onboarding
     } catch (error) {
       logger.error("Application initialization failed:", error);
       process.exit(1);
@@ -71,7 +63,6 @@ class Application {
       }
     });
 
-    // Chat history endpoint
     this.app.get("/history", async (req, res) => {
       try {
         const profile = await profileController.getProfile();
@@ -87,7 +78,6 @@ class Application {
       }
     });
 
-    // 🆕 Update memory endpoint
     this.app.post("/update-memory", async (req, res) => {
       const { key, value } = req.body;
       if (!key || !value) {
@@ -120,7 +110,13 @@ class Application {
         whatsappService.sock?.end();
         whatsappService.sock = null;
 
-        await this.runConsoleOnboarding();
+        // Clear auth info
+        require("fs").rmSync("./auth_info", { recursive: true, force: true });
+
+        // Start new onboarding
+        const consoleOnboarder = require("./services/consoleOnboarder");
+        await consoleOnboarder.start();
+
         res.json({ success: true });
       } catch (error) {
         logger.error("Reset failed:", error);
@@ -141,7 +137,33 @@ class Application {
       console.log(`✅ Dashboard: http://localhost:${this.port}`);
     });
   }
+
+  setupTerminal() {
+    const readline = require("readline");
+
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true,
+    });
+
+    this.rl.on("line", async (input) => {
+      if (input.startsWith("/update")) {
+        const profile = await profileController.getProfile();
+        if (!profile) {
+          console.log("❌ Complete onboarding first!");
+          return;
+        }
+
+        const response =
+          await require("./services/updateHandler").handleCommand(
+            profile.partnerPhone,
+            input
+          );
+        console.log(response);
+      }
+    });
+  }
 }
 
-// Start the application
 new Application().initialize();

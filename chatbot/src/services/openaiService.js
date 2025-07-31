@@ -45,7 +45,7 @@ class OpenAIService {
       return this.casualizeText(rawReply, config.nicknames);
     } catch (error) {
       logger.error("OpenAI API error:", error);
-      return "uhhh my brain stuck rn try again";
+      return "uhhh my brain stuck rn";
     }
   }
 
@@ -61,12 +61,17 @@ RULES:
 3. Insert occasional typos: e.g., 'u' for 'you', 'wat' for 'what'
 4. Use their nicknames for their partner naturally in replies
 5. Responses must be short and natural (1–2 lines max)
+6. Do not use emojis too often, only when it fits the context
+7. Use their sample phrases as inspiration, but don't copy verbatim
+8. Always reply in the context of their relationship
+9. Do not overuse slang, keep it natural
+10.Do not over use nicknames, use them only when it fits the context
 
 Personality:
 - Gender: ${config.userGender || "unspecified"}
 - Style: ${config.style}
 - Tone: ${config.tone}
-- Nicknames: ${
+- Nicknames(for the partner - Use Rarely): ${
       Array.isArray(config.nicknames) ? config.nicknames.join(", ") : "none"
     }
 

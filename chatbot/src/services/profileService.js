@@ -13,17 +13,25 @@ class ProfileService {
 
   async getProfileByPhone(phone) {
     try {
-      return await prisma.profile.findUnique({
+      const profile = await prisma.profile.findUnique({
         where: { partnerPhone: phone },
-        include: {
-          chatHistory: {
-            take: 20,
-            orderBy: { createdAt: "desc" },
-          },
-        },
+        include: { chatHistory: { take: 20, orderBy: { createdAt: "desc" } } },
       });
+
+      if (!profile) {
+        logger.warn("No profile found for phone:", phone);
+        return null;
+      }
+
+      // Validate required fields
+      if (!profile.id || !profile.role) {
+        logger.error("Profile missing required fields:", profile);
+        return null;
+      }
+
+      return profile;
     } catch (error) {
-      logger.error("Failed to fetch profile by phone: ", error);
+      logger.error("Failed to fetch profile by phone:", error);
       return null;
     }
   }

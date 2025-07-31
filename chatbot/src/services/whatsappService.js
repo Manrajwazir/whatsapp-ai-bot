@@ -19,26 +19,47 @@ class WhatsAppService {
     this.sock = null;
     this.qrShown = false;
     this.authDir = "./auth_info";
+    this.connectionPromise = null;
+    this.isConnected = false;
   }
 
   async initialize() {
-    try {
-      this.isFirstRun = await profileService.isFirstRun();
+    if (this.connectionPromise) return this.connectionPromise;
 
-      const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
+    this.connectionPromise = new Promise(async (resolve, reject) => {
+      try {
+        this.isFirstRun = await profileService.isFirstRun();
 
-      this.sock = makeWASocket({
-        auth: state,
-        logger,
-        printQRInTerminal: false,
-      });
+        // Clear console and show connection status
+        logger.info("🔌 Connecting to WhatsApp...");
 
-      this.setupEventHandlers(saveCreds);
-      logger.info("✅ WhatsApp service initialized");
-    } catch (error) {
-      logger.error("❌ WhatsApp initialization failed:", error);
-      throw error;
+        const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
+
+        this.sock = makeWASocket({
+          auth: state,
+          logger,
+          printQRInTerminal: false,
+        });
+
+        this.setupEventHandlers(saveCreds);
+        resolve();
+      } catch (error) {
+        logger.error("❌ WhatsApp initialization failed:", error);
+        reject(error);
+      }
+    });
+
+    return this.connectionPromise;
+  }
+
+  async cleanup() {
+    if (this.sock) {
+      await this.sock.end();
+      this.sock = null;
     }
+    this.connectionPromise = null;
+    this.isConnected = false;
+    this.qrShown = false;
   }
 
   setupEventHandlers(saveCreds) {
@@ -48,8 +69,17 @@ class WhatsAppService {
       if (qr && !this.qrShown) {
         const credsFile = path.join(this.authDir, "creds.json");
         if (!fs.existsSync(credsFile)) {
+          console.log(`
+          ██████╗ ██████╗ ████████╗
+          ██╔══██╗██╔══██╗╚══██╔══╝
+          ██████╔╝██████╔╝   ██║   
+          ██╔═══╝ ██╔══██╗   ██║   
+          ██║     ██║  ██║   ██║   
+          ╚═╝     ╚═╝  ╚═╝   ╚═╝   
+          AI Relationship Bot v2.0
+          `);
           qrcode.generate(qr, { small: true });
-          logger.info("📱 Scan this QR code to log in");
+          logger.info("📱 Scan this QR code to connect WhatsApp");
           this.qrShown = true;
         }
         return;
@@ -58,8 +88,19 @@ class WhatsAppService {
       if (connection === "close") {
         this.handleDisconnect(lastDisconnect);
       } else if (connection === "open") {
+        this.isConnected = true;
         logger.info("✅ WhatsApp connection established");
-        this.qrShown = false; // Reset for next session
+        this.qrShown = false;
+
+        // Start onboarding if needed (after connection is established)
+        if (this.isFirstRun && !onboardingHandler.isActive) {
+          setTimeout(() => {
+            onboardingHandler
+              .start()
+              .then(() => logger.info("Onboarding started"))
+              .catch((err) => logger.error("Onboarding start failed:", err));
+          }, 1000);
+        }
       }
     });
 
@@ -67,13 +108,15 @@ class WhatsAppService {
 
     this.sock.ev.on("messages.upsert", async (m) => {
       try {
+        if (!this.isConnected) return;
+
         const message = m.messages[0];
         if (!message?.message || message.key.fromMe) return;
 
         const text = this.extractMessageText(message).trim();
         const phone = message.key.remoteJid;
 
-        if (await this.isFirstRun()) {
+        if (await profileService.isFirstRun()) {
           await this.handleOnBoarding(phone, text);
           return;
         }
@@ -89,6 +132,7 @@ class WhatsAppService {
           await this.sock.sendMessage(phone, { text: updateResponse });
           return;
         }
+
         this.addToQueue(phone, text);
       } catch (error) {
         logger.error("❌ Message processing error:", error);
@@ -105,19 +149,25 @@ class WhatsAppService {
   }
 
   async handleOnBoarding(phone, text) {
-    if ((await profileService.isFirstRun()) && !onboardingHandler.isActive) {
-      await onboardingHandler.start();
-    }
+    try {
+      if (!onboardingHandler.isActive) {
+        await onboardingHandler.start();
+      }
 
-    const result = await onboardingHandler.handle(text);
-    const responseText =
-      result.message || result.error || "An unexpected error occurred";
-    await this.sock.sendMessage(phone, {
-      text: responseText,
-    });
+      const result = await onboardingHandler.handle(text);
+      const responseText =
+        result.message || result.error || "An unexpected error occurred";
 
-    if (result.completed) {
-      logger.info("🎉 Onboarding completed successfully");
+      if (result.completed) {
+        logger.info("🎉 Onboarding completed successfully");
+      }
+
+      await this.sock.sendMessage(phone, { text: responseText });
+    } catch (error) {
+      logger.error("Onboarding error:", error);
+      await this.sock.sendMessage(phone, {
+        text: "❌ An error occurred during onboarding. Please try again.",
+      });
     }
   }
 
@@ -168,27 +218,36 @@ class WhatsAppService {
 
   async handleMessages(messages) {
     const remoteJid = messages[0].remoteJid;
-    // Ensure all messages are from the same sender
     if (!messages.every((m) => m.remoteJid === remoteJid)) {
       logger.error("Mixed remoteJid in message batch");
       return;
     }
-    const combinedText = messages.map((m) => m.text).join("\n"); // Human-like delay (1-5 seconds)
-    await delay(1000 + Math.random() * 6000);
 
-    const reply = await chatController.generateReply(combinedText, remoteJid);
+    const combinedText = messages.map((m) => m.text).join("\n");
+    await delay(1000 + Math.random() * 6000); // Human-like delay
 
-    if (reply) {
-      await this.sock.sendMessage(remoteJid, { text: reply });
+    try {
+      const reply = await chatController.generateReply(combinedText, remoteJid);
+      if (reply) {
+        await this.sock.sendMessage(remoteJid, { text: reply });
+      }
+    } catch (error) {
+      logger.error("Failed to generate/send reply:", error);
     }
   }
 
   handleDisconnect(lastDisconnect) {
+    this.isConnected = false;
     const shouldReconnect = lastDisconnect.error?.output?.statusCode !== 401;
     logger.warn(`Connection closed. Reconnecting: ${shouldReconnect}`);
 
     if (shouldReconnect) {
-      setTimeout(() => this.initialize(), 5000);
+      setTimeout(async () => {
+        await this.cleanup();
+        this.initialize().catch((err) =>
+          logger.error("Reconnection failed:", err)
+        );
+      }, 5000);
     }
   }
 }
