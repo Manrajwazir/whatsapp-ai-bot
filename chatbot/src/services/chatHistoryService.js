@@ -65,7 +65,7 @@ class ChatHistoryService {
     try {
       return await prisma.chatHistory.findMany({
         where: { profileId },
-        orderBy: { timestamp: "asc" },
+        orderBy: { createdAt: "asc" },
       });
     } catch (error) {
       logger.error("Failed to fetch full chat history:", error);

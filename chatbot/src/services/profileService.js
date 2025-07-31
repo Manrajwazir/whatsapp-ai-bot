@@ -18,7 +18,7 @@ class ProfileService {
         include: {
           chatHistory: {
             take: 20,
-            orderBy: { timestamp: "desc" },
+            orderBy: { createdAt: "desc" },
           },
         },
       });

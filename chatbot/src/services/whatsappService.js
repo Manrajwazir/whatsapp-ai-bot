@@ -9,19 +9,23 @@ const onboardingHandler = require("./onboardingHandler");
 const profileService = require("./profileService");
 const updateHandler = require("./updateHandler");
 const chatController = require("../controllers/chatController");
+const fs = require("fs");
+const path = require("path");
 
 class WhatsAppService {
   constructor() {
     this.messageQueue = [];
     this.isProcessing = false;
     this.sock = null;
+    this.qrShown = false;
+    this.authDir = "./auth_info";
   }
 
   async initialize() {
     try {
       this.isFirstRun = await profileService.isFirstRun();
 
-      const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
+      const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
 
       this.sock = makeWASocket({
         auth: state,
@@ -41,15 +45,21 @@ class WhatsAppService {
     this.sock.ev.on("connection.update", (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      if (qr) {
-        qrcode.generate(qr, { small: true });
-        logger.info("📱 Scan the QR code above to log in.");
+      if (qr && !this.qrShown) {
+        const credsFile = path.join(this.authDir, "creds.json");
+        if (!fs.existsSync(credsFile)) {
+          qrcode.generate(qr, { small: true });
+          logger.info("📱 Scan this QR code to log in");
+          this.qrShown = true;
+        }
+        return;
       }
 
       if (connection === "close") {
         this.handleDisconnect(lastDisconnect);
       } else if (connection === "open") {
-        logger.info("✅ Successfully connected to WhatsApp");
+        logger.info("✅ WhatsApp connection established");
+        this.qrShown = false; // Reset for next session
       }
     });
 
@@ -95,7 +105,7 @@ class WhatsAppService {
   }
 
   async handleOnBoarding(phone, text) {
-    if (!onboardingHandler.isActive) {
+    if ((await profileService.isFirstRun()) && !onboardingHandler.isActive) {
       await onboardingHandler.start();
     }
 

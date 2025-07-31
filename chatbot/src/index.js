@@ -18,6 +18,23 @@ class Application {
   async initialize() {
     try {
       await this.setupDatabase();
+
+      // Check if we need onboarding
+      if (await profileService.isFirstRun()) {
+        logger.info("🆕 No profile found. Starting console onboarding...");
+        const consoleOnboarder = require("./services/consoleOnboarder");
+        await consoleOnboarder.start();
+
+        // Wait for onboarding to complete before continuing
+        return new Promise((resolve) => {
+          this.setupMiddleware();
+          this.setupRoutes();
+          this.startServices();
+          this.startServer();
+          resolve();
+        });
+      }
+
       this.setupMiddleware();
       this.setupRoutes();
       this.startServices();
@@ -98,10 +115,16 @@ class Application {
     this.app.post("/reset", async (req, res) => {
       try {
         await prisma.profile.deleteMany({});
+
+        // Kill WhatsApp service
+        whatsappService.sock?.end();
+        whatsappService.sock = null;
+
+        await this.runConsoleOnboarding();
         res.json({ success: true });
       } catch (error) {
-        logger.error("Failed to reset profile:", error);
-        res.status(500).json({ error: "Failed to reset profile" });
+        logger.error("Reset failed:", error);
+        res.status(500).json({ error: "Reset failed" });
       }
     });
   }
