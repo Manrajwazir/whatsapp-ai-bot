@@ -18,8 +18,8 @@ class ChatController {
 
       return reply;
     } catch (error) {
-      logger.error("Reply generation error:", error);
-      return "Oops, something went wrong. Try again!";
+      logger.error("Returning null due to error");
+      return null;
     }
   }
 

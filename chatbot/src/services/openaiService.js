@@ -44,8 +44,8 @@ class OpenAIService {
 
       return this.casualizeText(rawReply, config.nicknames);
     } catch (error) {
-      logger.error("OpenAI API error:", error);
-      return "uhhh my brain stuck rn";
+      logger.error("Returning null from OpenAI due to error");
+      return null;
     }
   }
 
@@ -111,11 +111,6 @@ ${
       if (Math.random() < 0.7) {
         casual = casual.replace(new RegExp(key, "g"), val);
       }
-    }
-
-    if (nicknames.length > 0 && Math.random() < 0.4) {
-      const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
-      casual = casual + " " + nickname;
     }
 
     if (Math.random() < 0.3) {
