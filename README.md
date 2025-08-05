@@ -1,6 +1,6 @@
 # 🤖 WhatsApp AI Chatbot (Version 2)
 
-Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-4-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
+Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-3.5-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
 
 ---
 
