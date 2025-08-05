@@ -1,0 +1,9 @@
+node_modules
+.env
+auth_info/
+logs/
+*.log
+last-qr-link.txt
+dev.db
+dev.db-journal
+.DS_Store

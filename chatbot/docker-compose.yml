@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    container_name: whatsapp-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp-bot
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./auth_info:/app/auth_info
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://postgres:yourpassword@postgres:5432/postgres
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      NODE_ENV: production
+      PORT: 3000
+      CHAT_HISTORY_LIMIT: 100
+      WA_AUTO_RECONNECT: true
+      WA_QR_MAX_RETRIES: 3
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
