@@ -131,7 +131,7 @@ To restart onboarding manually, delete the DB volume or run:
 ```bash
 docker volume rm chatbot_postgres_data
 ```
-
+Or you could use the reset personality option in the dashboard at localhost:3000
 ---
 
 ## 🧩 Project Structure
