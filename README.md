@@ -1,8 +1,28 @@
 # 🤖 WhatsApp AI Chatbot (Version 2)
 
+# 🤖 WhatsApp AI Chatbot (Version 2)
+
+Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-4-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
 Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-4-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
 
 ---
+
+## ✨ What's New in Version 2
+
+✅ **First-time onboarding** flow (guided setup in terminal)  
+✅ **PostgreSQL + Prisma** for persistent storage  
+✅ **Fully Dockerized**: no need to install Node or PostgreSQL manually  
+✅ **Customizable personality** (tone, style, nicknames, memories)  
+✅ **Dynamic roles**: Choose if bot acts as _boyfriend_ or _girlfriend_  
+✅ **Enhanced dashboard** with:
+
+- Visual memory editor
+- Personality preset manager
+- Reply length chart
+
+✅ **Default personality modes**  
+✅ **Real-time updates** via WhatsApp commands (e.g. `/update tone clingy`)  
+✅ **Auto-reconnect + session saving**
 
 ## ✨ What's New in Version 2
 
@@ -184,7 +204,14 @@ docker volume rm chatbot_postgres_data
 ```
 chatbot/
 ├── auth_info/
+├── auth_info/
 ├── logs/
+├── node_modules/
+├── prisma/
+│   ├── migrations/
+│   └── schema.prisma
+├── public/
+│   └── index.html
 ├── node_modules/
 ├── prisma/
 │   ├── migrations/
@@ -194,14 +221,23 @@ chatbot/
 ├── src/
 │   ├── config/
 │   │   └── logger.js
+│   │   └── logger.js
 │   ├── controllers/
+│   │   ├── chatController.js
+│   │   └── profileController.js
 │   │   ├── chatController.js
 │   │   └── profileController.js
 │   ├── services/
 │   │   ├── chatHistoryService.js
 │   │   ├── consoleOnboarder.js
 │   │   ├── onboardingHandler.js
+│   │   ├── chatHistoryService.js
+│   │   ├── consoleOnboarder.js
+│   │   ├── onboardingHandler.js
 │   │   ├── openaiService.js
+│   │   ├── personalityService.js
+│   │   ├── profileService.js
+│   │   ├── updateHandler.js
 │   │   ├── personalityService.js
 │   │   ├── profileService.js
 │   │   ├── updateHandler.js
