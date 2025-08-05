@@ -19,7 +19,7 @@ Welcome to **Version 1** of my custom-built **WhatsApp AI Chatbot** — a local 
 
 1. **Baileys** connects the bot to WhatsApp locally (QR scan required).
 2. **Incoming messages** are intercepted and passed to the AI.
-3. **OpenAI API** generates replies *based on your defined personality traits*.
+3. **OpenAI API** generates replies _based on your defined personality traits_.
 4. Replies are **sent back to WhatsApp** with natural tone and behavior.
 5. All interactions and logs are saved locally in the `/logs` folder.
 
@@ -27,13 +27,13 @@ Welcome to **Version 1** of my custom-built **WhatsApp AI Chatbot** — a local 
 
 ## 🛠️ Tech Stack
 
-| Layer             | Tech Used              |
-|------------------|------------------------|
+| Layer            | Tech Used                                            |
+| ---------------- | ---------------------------------------------------- |
 | Messaging Client | [Baileys](https://github.com/WhiskeySockets/Baileys) |
-| Backend          | Node.js + Express      |
-| AI Brain         | OpenAI GPT-3-5 Turbo (API)     |
-| Logging          | Winston                |
-| Dashboard        | Basic HTML + Tailwind  |
+| Backend          | Node.js + Express                                    |
+| AI Brain         | OpenAI GPT-3-5 Turbo (API)                           |
+| Logging          | Winston                                              |
+| Dashboard        | Basic HTML + Tailwind                                |
 
 ---
 
@@ -47,24 +47,33 @@ Welcome to **Version 1** of my custom-built **WhatsApp AI Chatbot** — a local 
 git clone https://github.com/Manrajwazir/whatsapp-ai-bot.git
 cd whatsapp-ai-bot
 ```
+
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
+
 ### 3. Create Your .env File
+
 ```bash
 OPENAI_API_KEY=your_openai_key_here
 PORT=3000
 ```
+
 ### 4. Start the Bot
+
 ```bash
 npm run dev
 ```
+
 ### 5. Scan the QR Code
+
 Open WhatsApp on your phone
 Link a new device using the QR code shown in your terminal
 
 ### 🧩 Project Structure
+
 ```bash
 chatbot/
 ├── .env
@@ -85,7 +94,9 @@ chatbot/
 │   │   ├── openaiService.js
 │   │   └── whatsappService.js
 ```
+
 💬 Example Response Logic
+
 ```bash
 Message: "How are you today?"
 
@@ -101,6 +112,7 @@ Only supports one user/bot personality
 Not hosted online (requires manual startup and WhatsApp login)
 
 ### 🗺️ Roadmap
+
 Version 2 (Coming Soon!):
 
 PostgreSQL + Prisma DB for persistent user profiles
@@ -122,10 +134,6 @@ This project is licensed under the [MIT License](LICENSE).
 🙋‍♂️ Author
 Manraj Wazir
 Student @ NAIT | Backend Developer | Aspiring Cybersecurity Engineer
+
 - 🔗 [GitHub Repository](https://github.com/Manrajwazir/whatsapp-ai-bot)
 - 👤 [Connect with me on LinkedIn](https://www.linkedin.com/in/manraj-wazir/)
-
-
-
-
-
