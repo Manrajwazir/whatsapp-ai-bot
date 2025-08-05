@@ -42,7 +42,7 @@ Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that
 
 ```bash
 git clone https://github.com/Manrajwazir/whatsapp-ai-bot.git
-cd whatsapp-ai-bot
+cd whatsapp-ai-bot/chatbot
 ```
 
 ---
