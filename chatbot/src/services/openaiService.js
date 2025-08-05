@@ -1,151 +1,160 @@
-const { OpenAI } = require('openai')
-const logger = require('../config/logger')
+const { OpenAI } = require("openai");
+const logger = require("../config/logger");
+const personalityService = require("./personalityService");
+const chatHistoryService = require("./chatHistoryService");
 
 class OpenAIService {
-  constructor () {
+  constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      timeout: 15000 // 15 second timeout
-    })
-
-    this.personality = {
-      name: 'Manraj Wazir',
-      traits: [
-        'Texts like a real person',
-        'Casual but caring',
-        'Brief responses but not cold',
-        'Occasional humor',
-        'Shows interest but not overly eager',
-        'No perfect punctuation',
-        'Occasional typos',
-        'Brief and casual',
-        'Never uses periods or commas',
-        'Uses hinglish words in sentences sometimes'
-      ],
-      examples: [
-        {
-          input: 'Hey, how was your day?',
-          output: 'badhia got some work done u?'
-        },
-        {
-          input: 'i miss u',
-          output: 'miss u too bbg muah'
-        },
-        {
-          input: 'What are you doing?',
-          output: 'chillin wat bout u'
-        }
-      ]
-    }
+      timeout: 15000,
+    });
   }
 
-  async generateReply (conversation) {
+  /**
+   * Generate AI reply using profile + history context
+   */
+  async generateReply(profile, userMessage = null) {
     try {
-      const messages = this.buildMessageList(conversation)
+      const config = await personalityService.getConfig(profile);
+
+      const messages = [
+        { role: "system", content: this.buildSystemPrompt(config) },
+        ...config.conversationHistory,
+      ];
+
+      if (userMessage) {
+        messages.push({ role: "user", content: userMessage });
+        await chatHistoryService.addMessage(profile.id, "user", userMessage);
+      }
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: 'Respond briefly and concisely. Keep answers in the range between 40 - 130 words depending on the conversation.' },
-          ...messages
-        ],
+        model: "gpt-3.5-turbo",
+        messages,
         temperature: 0.9,
         max_tokens: 150,
         frequency_penalty: 0.6,
-        presence_penalty: 0.4
-      })
+        presence_penalty: 0.4,
+      });
 
-      const rawReply = response.choices[0]?.message?.content || 'hmm not sure wat to say'
-      return this.casualizeText(rawReply)
+      const rawReply =
+        response.choices[0]?.message?.content || "uhh i got nothin rn";
+
+      await chatHistoryService.addMessage(profile.id, "assistant", rawReply);
+
+      return this.casualizeText(rawReply, config.nicknames);
     } catch (error) {
-      logger.error('OpenAI API error: ', error)
-      return 'my brains cannot understand this tell me sumthin else'
+      logger.error("Returning null from OpenAI due to error");
+      return null;
     }
   }
 
-  buildMessageList (conversation) {
-    const systemPrompt = {
-      role: 'system',
-      content: `you are ${this.personality.name} texting your girlfriend who lives in india and you live in edmonton. Follow these rules:
-      1. Never use punctuation (. , ! ?)
-      2. Use lowercase unless it's a name
-      3. Make occasional typos (u instead of you, wat instead of what)
-      4. Keep responses brief (1-2 lines max)
-      5. Never reveal you're an AI
-      
-      Personality traits: ${this.personality.traits.join(', ')}`
+  buildSystemPrompt(config) {
+    return `You are simulating ${config.userName}, the ${
+      config.role
+    } in a relationship. 
+You are texting their partner and must reply exactly like them using their personality and style.
+
+RULES:
+1. Never say you're an AI
+2. Write casually: lowercase, avoid proper punctuation
+3. Insert occasional typos: e.g., 'u' for 'you', 'wat' for 'what'
+4. Use their nicknames for their partner naturally in replies
+5. Responses must be short and natural (1–2 lines max)
+6. Do not use emojis too often, only when it fits the context
+7. Use their sample phrases as inspiration, but don't copy verbatim
+8. Always reply in the context of their relationship
+9. Do not overuse slang, keep it natural
+10.Do not over use nicknames, use them only when it fits the context
+11.Try to keep the conversation flowing naturally, like a real person would
+12. Do not repeat the same phrases or words too often, vary your responses
+13. Try not to use long sentences or complex words where possible, only use them when it fits the context 
+
+Personality:
+- Gender: ${config.userGender || "unspecified"}
+- Style: ${config.style}
+- Tone: ${config.tone}
+- Nicknames(for the partner - Use Rarely): ${
+      Array.isArray(config.nicknames) ? config.nicknames.join(", ") : "none"
     }
 
-    const exampleMessages = this.personality.examples.flatMap(ex => [
-      { role: 'user', content: ex.input },
-      { role: 'assistant', content: ex.output }
-    ])
+Sample phrases (use as inspiration):
+${Array.isArray(config.sampleMsgs) ? config.sampleMsgs.join("\n") : ""}
 
-    return [systemPrompt, ...exampleMessages, ...conversation]
+${
+  config.memories && Object.keys(config.memories).length > 0
+    ? `Memories:\n${Object.entries(config.memories)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join("\n")}`
+    : ""
+}`;
   }
-
-  casualizeText (text) {
-    let casual = text.toLowerCase()
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim()
+  casualizeText(text, nicknames = []) {
+    let casual = text
+      .toLowerCase()
+      .replace(/[.,/#!$%^&*;:{}=\\-_`~()?'"]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
 
     const replacements = {
-      ' you ': ' u ',
-      ' your ': ' ur ',
-      ' to ': ' 2 ',
-      ' what ': ' wat ',
-      ' with ': ' wit ',
-      ' because ': ' cuz ',
-      ' going to ': ' gonna ',
-      ' them ': ' dem ',
-      ' the ': ' da ',
-      ' okay ': ' k ',
-      ' though ': ' tho '
-    }
+      " you ": " u ",
+      " your ": " ur ",
+      " with ": " wit ",
+      " because ": " cuz ",
+      " going to ": " gonna ",
+      " them ": " dem ",
+      " okay ": " k ",
+      " though ": " tho ",
+    };
 
-    Object.entries(replacements).forEach(([proper, casualVersion]) => {
+    for (const [key, val] of Object.entries(replacements)) {
       if (Math.random() < 0.7) {
-        casual = casual.replace(new RegExp(proper, 'g'), casualVersion)
+        casual = casual.replace(new RegExp(key, "g"), val);
       }
-    })
+    }
 
     if (Math.random() < 0.3) {
-      casual = this.addRandomTypo(casual)
+      casual = this.addRandomTypo(casual);
     }
 
-    return casual
+    return casual;
   }
 
-  addRandomTypo (text) {
-    const words = text.split(' ')
-    if (words.length < 2) return text
+  /**
+   * Add human-like typos randomly
+   */
+  addRandomTypo(text) {
+    const words = text.split(" ");
+    if (words.length < 2) return text;
 
-    const typoPos = Math.floor(Math.random() * words.length)
-    const word = words[typoPos]
+    const index = Math.floor(Math.random() * words.length);
+    let word = words[index];
 
-    if (word.length <= 2) return text
+    if (word.length < 3) return text;
 
-    // Apply different typo types
-    const typoType = Math.floor(Math.random() * 3)
+    const typoType = Math.floor(Math.random() * 3);
     switch (typoType) {
       case 0: {
-        const doublePos = Math.floor(Math.random() * (word.length - 1))
-        words[typoPos] = word.slice(0, doublePos + 1) + word.slice(doublePos)
-        break
+        const pos = Math.floor(Math.random() * (word.length - 1));
+        word = word.slice(0, pos) + word[pos] + word.slice(pos);
+        break;
       }
       case 1: {
-        const removePos = Math.floor(Math.random() * word.length)
-        words[typoPos] = word.slice(0, removePos) + word.slice(removePos + 1)
-        break
+        const removePos = Math.floor(Math.random() * word.length);
+        word = word.slice(0, removePos) + word.slice(removePos + 1);
+        break;
       }
       case 2:
-        words[typoPos] = word.replace(/[aeiou]/g, () =>
-          'aeiou'[Math.floor(Math.random() * 5)])
-        break
+        word = word.replace(
+          /[aeiou]/g,
+          () => "aeiou"[Math.floor(Math.random() * 5)]
+        );
+        break;
     }
-    return words.join(' ')
+
+    words[index] = word;
+    return words.join(" ");
   }
 }
 
-module.exports = new OpenAIService()
+module.exports = new OpenAIService();

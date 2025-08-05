@@ -1,17 +1,18 @@
-const winston = require('winston')
-const path = require('path')
-const fs = require('fs')
+const winston = require("winston");
+const path = require("path");
+const fs = require("fs");
 
-const logDir = 'logs'
+const logDir = path.resolve(__dirname, "..", "..", "logs");
+
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir)
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  level: process.env.NODE_ENV === "development" ? "debug" : "info",
   format: winston.format.combine(
     winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
+      format: "YYYY-MM-DD HH:mm:ss",
     }),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
@@ -19,27 +20,29 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error'
+      filename: path.join(logDir, "error.log"),
+      level: "error",
     }),
     new winston.transports.File({
-      filename: path.join(logDir, 'combined.log')
-    })
-  ]
-})
+      filename: path.join(logDir, "combined.log"),
+    }),
+  ],
+});
 
 // Console logging in development
-if (process.env.NODE_ENV === 'development') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }))
+if (process.env.NODE_ENV === "development") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+    })
+  );
 }
 
 logger.trace = (...args) => {
-  logger.debug('[TRACE]', ...args)
-}
+  logger.debug("[TRACE]", ...args);
+};
 
-module.exports = logger
+module.exports = logger;

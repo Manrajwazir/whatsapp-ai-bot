@@ -1,45 +1,39 @@
-const logger = require('../config/logger')
-const openaiService = require('../services/openaiService')
+const logger = require("../config/logger");
+const openaiService = require("../services/openaiService");
+const profileService = require("../services/profileService");
+const chatHistoryService = require("../services/chatHistoryService");
 
 class ChatController {
-  constructor () {
-    this.conversationHistory = []
-    this.maxHistoryLength = 30
-  }
-
-  async generateReply (userMessage) {
+  async generateReply(userMessage, phone) {
     try {
-      this.addToHistory('user', userMessage)
+      const profile = await profileService.getProfileByPhone(phone);
+      if (!profile || !profile.id || !profile.role) {
+        logger.error("Invalid profile - missing required fields");
+        return "Please complete setup first!";
+      }
 
-      const reply = await openaiService.generateReply(this.conversationHistory)
+      await chatHistoryService.addMessage(profile.id, "user", userMessage);
+      const reply = await openaiService.generateReply(profile, userMessage);
+      await chatHistoryService.addMessage(profile.id, "assistant", reply);
 
-      this.addToHistory('assistant', reply)
-      this.manageHistoryLength()
-
-      return reply
+      return reply;
     } catch (error) {
-      logger.error('Reply generation error:', error)
-      return null
+      logger.error("Returning null due to error");
+      return null;
     }
   }
 
-  addToHistory (role, content) {
-    this.conversationHistory.push({
-      role,
-      content,
-      timestamp: Date.now()
-    })
-  }
+  async getFullHistory(phone) {
+    try {
+      const profile = await profileService.getProfileByPhone(phone);
+      if (!profile) return [];
 
-  manageHistoryLength () {
-    if (this.conversationHistory.length > this.maxHistoryLength) {
-      this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength)
+      return await chatHistoryService.getFullHistory(profile.id);
+    } catch (error) {
+      logger.error("Failed to get chat history:", error);
+      return [];
     }
-  }
-
-  getConversationHistory () {
-    return this.conversationHistory
   }
 }
 
-module.exports = new ChatController()
+module.exports = new ChatController();

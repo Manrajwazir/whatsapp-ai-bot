@@ -1,6 +1,6 @@
-node_modules/
-auth_info/
+node_modules
 .env
+auth_info/
 logs/
 *.log
 last-qr-link.txt

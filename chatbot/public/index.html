@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat Dashboard</title>
+  <title>AI Partner Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <style>
     .chat-container {
-      max-height: 70vh;
+      max-height: 60vh;
       overflow-y: auto;
       scroll-behavior: smooth;
     }
@@ -47,36 +48,132 @@
       display: inline-block;
       margin-left: 5px;
     }
+    .personality-badge {
+      display: inline-block;
+      background: #e9ecef;
+      border-radius: 20px;
+      padding: 3px 10px;
+      margin: 2px;
+      font-size: 0.85rem;
+    }
+    .memory-item {
+      background: #f8f9fa;
+      border-left: 3px solid #0d6efd;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    .config-card {
+      transition: all 0.3s ease;
+    }
+    .config-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
   <div class="container py-4">
-    <div class="card shadow-sm">
-      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">AI Chat Dashboard</h2>
-        <div id="connection-status" class="d-flex align-items-center">
-          <span class="status-indicator offline"></span>
-          <span class="ms-1">Offline</span>
+    <div class="row">
+      <!-- Main Chat Panel -->
+      <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">AI Partner Chat</h2>
+            <div id="connection-status" class="d-flex align-items-center">
+              <span class="status-indicator offline"></span>
+              <span class="ms-1">Offline</span>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <div id="chat-log" class="chat-container mb-3"></div>
+            
+            <div class="d-flex align-items-center">
+              <div id="typing-status" class="text-muted small me-2"></div>
+            </div>
+          </div>
+          
+          <div class="card-footer text-muted small">
+            <div class="d-flex justify-content-between">
+              <span>Messages: <span id="message-count">0</span></span>
+              <span>Last updated: <span id="last-updated">Never</span></span>
+            </div>
+          </div>
         </div>
       </div>
       
-      <div class="card-body">
-        <div id="chat-log" class="chat-container mb-3"></div>
+      <!-- Personality Panel -->
+      <div class="col-md-4">
+        <div class="card shadow-sm config-card mb-4">
+          <div class="card-header bg-success text-white">
+            <h3 class="h6 mb-0">Personality Configuration</h3>
+          </div>
+          <div class="card-body">
+            <div id="onboarding-status" class="alert alert-warning">
+              <i class="bi bi-exclamation-circle me-2"></i>
+              Onboarding not completed
+            </div>
+            
+            <div id="personality-details" style="display:none;">
+              <div class="mb-3">
+                <h5><i class="bi bi-person-badge me-2"></i>Role</h5>
+                <span id="config-role" class="personality-badge">Not set</span>
+              </div>
+              
+              <div class="mb-3">
+                <h5><i class="bi bi-phone me-2"></i>Partner Number</h5>
+                <span id="config-partner" class="personality-badge">Not set</span>
+              </div>
+              
+              <div class="mb-3">
+                <h5><i class="bi bi-chat-text me-2"></i>Style</h5>
+                <span id="config-style" class="personality-badge">Not set</span>
+              </div>
+              
+              <div class="mb-3">
+                <h5><i class="bi bi-megaphone me-2"></i>Tone</h5>
+                <span id="config-tone" class="personality-badge">Not set</span>
+              </div>
+              
+              <div class="mb-3">
+                <h5><i class="bi bi-heart me-2"></i>Nicknames</h5>
+                <div id="config-nicknames"></div>
+              </div>
+              
+              <div class="mb-3">
+                <h5><i class="bi bi-journal me-2"></i>Memories</h5>
+                <div id="config-memories" class="mt-2"></div>
+                
+                <div class="input-group mt-2">
+                  <input type="text" id="memory-key" class="form-control" placeholder="Memory key">
+                  <input type="text" id="memory-value" class="form-control" placeholder="Memory value">
+                  <button class="btn btn-sm btn-outline-primary" id="add-memory">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <button class="btn btn-sm btn-outline-danger w-100" id="reset-btn">
+                <i class="bi bi-arrow-repeat me-2"></i>Reset Personality
+              </button>
+            </div>
+          </div>
+        </div>
         
-        <div class="d-flex align-items-center">
-          <div id="typing-status" class="text-muted small me-2"></div>
-        </div>
-      </div>
-      
-      <div class="card-footer text-muted small">
-        <div class="d-flex justify-content-between">
-          <span>Messages: <span id="message-count">0</span></span>
-          <span>Last updated: <span id="last-updated">Never</span></span>
+        <div class="card shadow-sm config-card">
+          <div class="card-header bg-info text-white">
+            <h3 class="h6 mb-0">Response Analytics</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="response-chart" height="200"></canvas>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     class ChatDashboard {
       constructor() {
@@ -84,6 +181,7 @@
         this.isTyping = false;
         this.typingTimeout = null;
         this.initElements();
+        this.initEventListeners();
         this.startPolling();
       }
       
@@ -93,13 +191,36 @@
           connectionStatus: document.getElementById('connection-status'),
           typingStatus: document.getElementById('typing-status'),
           messageCount: document.getElementById('message-count'),
-          lastUpdated: document.getElementById('last-updated')
+          lastUpdated: document.getElementById('last-updated'),
+          personalityDetails: document.getElementById('personality-details'),
+          onboardingStatus: document.getElementById('onboarding-status'),
+          configRole: document.getElementById('config-role'),
+          configPartner: document.getElementById('config-partner'),
+          configStyle: document.getElementById('config-style'),
+          configTone: document.getElementById('config-tone'),
+          configNicknames: document.getElementById('config-nicknames'),
+          configMemories: document.getElementById('config-memories'),
+          memoryKey: document.getElementById('memory-key'),
+          memoryValue: document.getElementById('memory-value'),
+          addMemoryBtn: document.getElementById('add-memory'),
+          resetBtn: document.getElementById('reset-btn'),
+          responseChart: document.getElementById('response-chart')
         };
+      }
+      
+      initEventListeners() {
+        this.elements.addMemoryBtn.addEventListener('click', () => this.addMemory());
+        this.elements.resetBtn.addEventListener('click', () => this.resetProfile());
+      }
+      
+      async loadData() {
+        await this.loadMessages();
+        await this.loadProfile();
       }
       
       async loadMessages() {
         try {
-          const response = await fetch('/logs');
+          const response = await fetch('/history');
           if (!response.ok) throw new Error('Failed to fetch messages');
           
           const messages = await response.json();
@@ -107,7 +228,7 @@
           
           // Check if we have new messages
           const latestMessage = messages[messages.length - 1];
-          if (latestMessage.timestamp <= this.lastUpdate) return;
+          if (latestMessage.timestamp && new Date(latestMessage.timestamp) <= this.lastUpdate) return;
           
           this.renderMessages(messages);
           this.updateConnectionStatus(true);
@@ -121,6 +242,55 @@
         } catch (error) {
           console.error('Error loading messages:', error);
           this.updateConnectionStatus(false);
+        }
+      }
+      
+      async loadProfile() {
+        try {
+          const response = await fetch('/profile');
+          if (!response.ok) throw new Error('Failed to fetch profile');
+          
+          const profile = await response.json();
+          
+          if (profile?.id) {
+            this.elements.onboardingStatus.style.display = 'none';
+            this.elements.personalityDetails.style.display = 'block';
+            
+            this.elements.configRole.textContent = profile.role;
+            this.elements.configPartner.textContent = profile.partnerPhone;
+            this.elements.configStyle.textContent = profile.style;
+            this.elements.configTone.textContent = profile.tone;
+            
+            // Render nicknames
+            this.elements.configNicknames.innerHTML = '';
+            profile.nicknames?.forEach(nick => {
+              const badge = document.createElement('span');
+              badge.className = 'personality-badge me-2';
+              badge.textContent = nick;
+              this.elements.configNicknames.appendChild(badge);
+            });
+            
+            // Render memories
+            this.elements.configMemories.innerHTML = '';
+            if (profile.memories) {
+              Object.entries(profile.memories).forEach(([key, value]) => {
+                const memDiv = document.createElement('div');
+                memDiv.className = 'memory-item d-flex justify-content-between';
+                memDiv.innerHTML = `
+                  <div><strong>${key}:</strong> ${value}</div>
+                  <button class="btn btn-sm btn-link text-danger p-0 delete-memory" data-key="${key}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                `;
+                this.elements.configMemories.appendChild(memDiv);
+              });
+            }
+            
+            // Initialize chart
+            this.initResponseChart(profile.chatHistory || []);
+          }
+        } catch (error) {
+          console.error('Error loading profile:', error);
         }
       }
       
@@ -144,13 +314,52 @@
         
         // Update stats
         this.lastUpdate = messages.length > 0 ? 
-          messages[messages.length - 1].timestamp : 
-          Date.now();
+          new Date(messages[messages.length - 1].timestamp) : 
+          new Date();
         this.elements.messageCount.textContent = messages.length;
-        this.elements.lastUpdated.textContent = new Date(this.lastUpdate).toLocaleString();
+        this.elements.lastUpdated.textContent = this.lastUpdate.toLocaleString();
         
         // Scroll to bottom
         container.scrollTop = container.scrollHeight;
+      }
+      
+      initResponseChart(history) {
+        const ctx = this.elements.responseChart.getContext('2d');
+        const data = {
+          labels: history.map((_, i) => i + 1),
+          datasets: [{
+            label: 'Response Length',
+            data: history.map(msg => msg.content.length),
+            backgroundColor: history.map(msg => 
+              msg.role === 'user' ? 'rgba(54, 162, 235, 0.5)' : 'rgba(255, 99, 132, 0.5)'),
+            borderColor: history.map(msg => 
+              msg.role === 'user' ? 'rgb(54, 162, 235)' : 'rgb(255, 99, 132)'),
+            borderWidth: 1
+          }]
+        };
+        
+        new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Characters'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Message Number'
+                }
+              }
+            }
+          }
+        });
       }
       
       updateConnectionStatus(isOnline) {
@@ -167,7 +376,6 @@
         this.isTyping = true;
         this.elements.typingStatus.textContent = 'AI is typing...';
         
-        // Simulate typing delay
         if (this.typingTimeout) clearTimeout(this.typingTimeout);
         this.typingTimeout = setTimeout(() => {
           this.hideTypingIndicator();
@@ -179,16 +387,48 @@
         this.elements.typingStatus.textContent = '';
       }
       
-      startPolling() {
-        // Initial load
-        this.loadMessages();
+      async addMemory() {
+        const key = this.elements.memoryKey.value.trim();
+        const value = this.elements.memoryValue.value.trim();
         
-        // Poll every 2 seconds
-        setInterval(() => this.loadMessages(), 2000);
+        if (!key || !value) return;
+        
+        try {
+          const response = await fetch('/update-memory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value })
+          });
+          
+          if (response.ok) {
+            this.elements.memoryKey.value = '';
+            this.elements.memoryValue.value = '';
+            await this.loadProfile();
+          }
+        } catch (error) {
+          console.error('Failed to add memory:', error);
+        }
+      }
+      
+      async resetProfile() {
+        if (!confirm('Are you sure you want to reset all settings?')) return;
+        
+        try {
+          const response = await fetch('/reset', { method: 'POST' });
+          if (response.ok) {
+            location.reload();
+          }
+        } catch (error) {
+          console.error('Failed to reset profile:', error);
+        }
+      }
+      
+      startPolling() {
+        this.loadData();
+        setInterval(() => this.loadData(), 2000);
       }
     }
     
-    // Initialize the dashboard when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       new ChatDashboard();
     });

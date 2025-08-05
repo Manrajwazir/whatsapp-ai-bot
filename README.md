@@ -1,6 +1,6 @@
 # 🤖 WhatsApp AI Chatbot (Version 2)
 
-Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-4-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
+Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-3.5-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
 
 ---
 
@@ -42,7 +42,7 @@ Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that
 
 ```bash
 git clone https://github.com/Manrajwazir/whatsapp-ai-bot.git
-cd whatsapp-ai-bot
+cd whatsapp-ai-bot/chatbot
 ```
 
 ---
@@ -89,7 +89,11 @@ This ensures Docker can execute the shell script properly on Unix-based systems.
 ### 5. Build the Docker Image
 
 ```bash
-docker-compose up --build
+docker-compose build
+```
+Then
+```bash
+docker compose up 
 ```
 
 Let it finish and **exit using `CTRL+C`** (we do this once to set up the DB).
@@ -127,7 +131,7 @@ To restart onboarding manually, delete the DB volume or run:
 ```bash
 docker volume rm chatbot_postgres_data
 ```
-
+Or you could use the reset personality option in the dashboard at localhost:3000
 ---
 
 ## 🧩 Project Structure
@@ -217,6 +221,7 @@ Visit: [http://localhost:3000](http://localhost:3000)
 - OTP login + hosting
 - AI mood tracker
 - WhatsApp command interface (buttons/reactions)
+- Add functionality with other apps as well such as intagram or discord
 
 ---
 
