@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   bot:
     build:
@@ -25,10 +30,11 @@ services:
       - ./auth_info:/app/auth_info
       - ./logs:/app/logs
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:yourpassword@postgres:5432/postgres
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: your_openai_api_key
       NODE_ENV: production
       PORT: 3000
       CHAT_HISTORY_LIMIT: 100
@@ -36,6 +42,9 @@ services:
       WA_QR_MAX_RETRIES: 3
     env_file:
       - .env
+    tty: true               # Allows terminal output (like QR codes)
+    stdin_open: true        # Allows interactive input
+    restart: unless-stopped # Better restart policy
 
 volumes:
   postgres_data:
