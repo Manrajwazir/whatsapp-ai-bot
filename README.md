@@ -89,7 +89,11 @@ This ensures Docker can execute the shell script properly on Unix-based systems.
 ### 5. Build the Docker Image
 
 ```bash
-docker-compose up --build
+docker-compose build
+```
+Then
+```bash
+docker compose up 
 ```
 
 Let it finish and **exit using `CTRL+C`** (we do this once to set up the DB).
