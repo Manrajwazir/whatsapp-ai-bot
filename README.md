@@ -221,6 +221,7 @@ Visit: [http://localhost:3000](http://localhost:3000)
 - OTP login + hosting
 - AI mood tracker
 - WhatsApp command interface (buttons/reactions)
+- Add functionality with other apps as well such as intagram or discord
 
 ---
 
