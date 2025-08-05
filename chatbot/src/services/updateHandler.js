@@ -12,21 +12,29 @@ class UpdateHandler {
         return "❌ Complete onboarding first! Send any message to start setup.";
       }
 
-      const args = commandText.split(" ");
-      if (args.length < 3) {
+      const args = commandText.match(/"[^"]+"|\S+/g) || [];
+      if (args.length < 2) {
         return this.showHelp();
       }
 
-      const [_, type, key, ...valueParts] = args;
-      const value = valueParts.join(" ");
+      const type = args[1].toLowerCase();
+      const value = commandText
+        .substring(commandText.indexOf(args[1]) + args[1].length)
+        .trim();
 
-      switch (type.toLowerCase()) {
+      switch (type) {
         case "tone":
           return await this.updateTone(profile.id, value);
         case "style":
           return await this.updateStyle(profile.id, value);
         case "memory":
-          return await this.updateMemory(profile.id, key, value);
+          const memoryParts = value.split(/\s+/);
+          if (memoryParts.length < 2) {
+            return "❌ Memory format: /update memory [key] [value]";
+          }
+          const memoryKey = memoryParts[0];
+          const memoryValue = value.substring(memoryKey.length).trim();
+          return await this.updateMemory(profile.id, memoryKey, memoryValue);
         case "nickname":
           return await this.updateNicknames(profile.id, value);
         default:

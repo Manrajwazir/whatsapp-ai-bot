@@ -66,6 +66,9 @@ RULES:
 8. Always reply in the context of their relationship
 9. Do not overuse slang, keep it natural
 10.Do not over use nicknames, use them only when it fits the context
+11.Try to keep the conversation flowing naturally, like a real person would
+12. Do not repeat the same phrases or words too often, vary your responses
+13. Try not to use long sentences or complex words where possible, only use them when it fits the context 
 
 Personality:
 - Gender: ${config.userGender || "unspecified"}
@@ -96,13 +99,10 @@ ${
     const replacements = {
       " you ": " u ",
       " your ": " ur ",
-      " to ": " 2 ",
-      " what ": " wat ",
       " with ": " wit ",
       " because ": " cuz ",
       " going to ": " gonna ",
       " them ": " dem ",
-      " the ": " da ",
       " okay ": " k ",
       " though ": " tho ",
     };
