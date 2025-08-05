@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:yourpassword@postgres:5432/postgres
-      OPENAI_API_KEY: your_openai_api_key
+      OPENAI_API_KEY: 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
       NODE_ENV: production
       PORT: 3000
       CHAT_HISTORY_LIMIT: 100
