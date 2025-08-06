@@ -1,5 +1,7 @@
 # 🤖 WhatsApp AI Chatbot (Version 2)
 
+Want a locally run program which replies to your significant other while you are busy coding? Well use this little local software then.
+
 Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that connects to WhatsApp via **Baileys**, responds using **OpenAI's GPT-3.5-turbo**, and now supports full Dockerization, persistent storage, enhanced customization, and more!
 
 ---
@@ -91,9 +93,11 @@ This ensures Docker can execute the shell script properly on Unix-based systems.
 ```bash
 docker-compose build
 ```
+
 Then
+
 ```bash
-docker compose up 
+docker compose up
 ```
 
 Let it finish and **exit using `CTRL+C`** (we do this once to set up the DB).
@@ -131,8 +135,8 @@ To restart onboarding manually, delete the DB volume or run:
 ```bash
 docker volume rm chatbot_postgres_data
 ```
-Or you could use the reset personality option in the dashboard at localhost:3000
----
+
+## Or you could use the reset personality option in the dashboard at localhost:3000
 
 ## 🧩 Project Structure
 
