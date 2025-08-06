@@ -37,6 +37,7 @@ Welcome to **Version 2** of my AI-powered WhatsApp chatbot — a local tool that
 ## 🚀 Quick Start (Docker Recommended)
 
 > ⚙️ **Prerequisites**: Docker Desktop installed + your [OpenAI API key](https://platform.openai.com/)
+> KEEP YOUR WHATSAPP OPEN ON YOUR LAPTOP.
 
 ---
 
