@@ -1,4 +1,4 @@
-# 🤖 WhatsApp AI Relationship Chatbot (Version 2)
+# 🤖 WhatsApp AI Relationship Automated Reply System (Version 2)
 
 Want a locally run program which replies to your significant other while you are busy coding? Well use this little local software then.
 
