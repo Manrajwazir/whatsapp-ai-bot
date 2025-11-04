@@ -239,7 +239,7 @@ MIT
 ## 🙋‍♂️ Author
 
 **Manraj Wazir**  
-Student @ NAIT | Backend Developer | Aspiring Cybersecurity Engineer  
+Student @ NAIT | Backend Developer | Aspiring GPU Engineer 
 [🔗 GitHub](https://github.com/Manrajwazir/whatsapp-ai-bot) | [🔗 LinkedIn](https://www.linkedin.com/in/manraj-wazir/)
 
 ---
